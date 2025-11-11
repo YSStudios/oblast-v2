@@ -9,8 +9,9 @@ import {
   ReactNode,
   FC,
   useState,
+  useCallback,
 } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import {
   useGLTF,
   Merged,
@@ -24,6 +25,73 @@ import { SpinningBox } from "./SpinningBox";
 import type { GLTF } from "three-stdlib";
 
 THREE.ColorManagement.enabled = true;
+
+// Context for managing screen focus state
+interface FocusTarget {
+  cameraPosition: [number, number, number];
+  lookAt: [number, number, number];
+  originalPosition: [number, number, number];
+  originalQuaternion: [number, number, number, number];
+}
+
+interface ScreenFocusContextType {
+  focusTarget: FocusTarget | null;
+  setFocusTarget: (target: FocusTarget) => void;
+  clearFocus: () => void;
+  completeClearFocus: () => void;
+  isTransitioning: boolean;
+  mouseFollowEnabled: boolean;
+  toggleMouseFollow: () => void;
+}
+
+const ScreenFocusContext = createContext<ScreenFocusContextType | null>(null);
+
+export function ScreenFocusProvider({ children }: { children: ReactNode }) {
+  const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [mouseFollowEnabled, setMouseFollowEnabled] = useState(true);
+  
+  const clearFocus = useCallback(() => {
+    setIsTransitioning(true);
+    // Don't clear focus target immediately - let the transition complete
+  }, []);
+
+  const handleSetFocus = useCallback((target: FocusTarget) => {
+    setIsTransitioning(false);
+    setFocusTarget(target);
+  }, []);
+
+  const completeClearFocus = useCallback(() => {
+    setFocusTarget(null);
+    setIsTransitioning(false);
+  }, []);
+
+  const toggleMouseFollow = useCallback(() => {
+    setMouseFollowEnabled(prev => !prev);
+  }, []);
+
+  return (
+    <ScreenFocusContext.Provider value={{ 
+      focusTarget, 
+      setFocusTarget: handleSetFocus, 
+      clearFocus,
+      completeClearFocus,
+      isTransitioning,
+      mouseFollowEnabled,
+      toggleMouseFollow
+    }}>
+      {children}
+    </ScreenFocusContext.Provider>
+  );
+}
+
+export function useScreenFocus() {
+  const context = useContext(ScreenFocusContext);
+  if (!context) {
+    throw new Error("useScreenFocus must be used within ScreenFocusProvider");
+  }
+  return context;
+}
 
 type GLTFResult = GLTF & {
   nodes: Record<string, THREE.Object3D>;
@@ -800,6 +868,74 @@ function Screen({
   const [displayText, setDisplayText] = useState("");
   const animationProgress = useRef(0);
   const [lineStart, setLineStart] = useState<[number, number, number]>([0, 1.2, -0.15]);
+  const { focusTarget, setFocusTarget, clearFocus } = useScreenFocus();
+  const { camera } = useThree();
+
+  // Calculate optimal camera position for this screen
+  const handleScreenClick = useCallback(() => {
+    if (!panelRef.current || !groupRef.current) return;
+
+    // If this screen is already focused, unfocus it
+    if (focusTarget) {
+      clearFocus();
+      return;
+    }
+
+    // Capture current camera state before focusing
+    const originalPosition: [number, number, number] = [
+      camera.position.x,
+      camera.position.y,
+      camera.position.z
+    ];
+    const originalQuaternion: [number, number, number, number] = [
+      camera.quaternion.x,
+      camera.quaternion.y,
+      camera.quaternion.z,
+      camera.quaternion.w
+    ];
+
+    // Update matrices to get accurate world positions
+    panelRef.current.updateWorldMatrix(true, false);
+    groupRef.current.updateWorldMatrix(true, false);
+
+    // Get screen center in world coordinates
+    const bbox = new THREE.Box3().setFromObject(panelRef.current);
+    const center = new THREE.Vector3();
+    bbox.getCenter(center);
+
+    // Extract the screen's Z-axis (forward direction) from its world matrix
+    // This represents the direction the screen is facing
+    const worldMatrix = panelRef.current.matrixWorld;
+    const normalWorld = new THREE.Vector3();
+    
+    // The Z-axis of the transformation matrix is the forward direction
+    // Extract it from the matrix (third column, rows 0-2)
+    normalWorld.set(
+      worldMatrix.elements[8],
+      worldMatrix.elements[9],
+      worldMatrix.elements[10]
+    ).normalize();
+
+    // Calculate screen dimensions for proper framing
+    const size = new THREE.Vector3();
+    bbox.getSize(size);
+    const screenHeight = Math.max(size.x, size.y);
+
+    // Calculate distance needed to frame the screen nicely
+    // Using FOV of 45 degrees from Scene.tsx
+    const fov = 45 * (Math.PI / 180);
+    const distance = (screenHeight / 2) / Math.tan(fov / 2) * 2.5; // 2.5 for comfortable viewing distance
+
+    // Position camera directly in front of the screen along its normal
+    const cameraPosition = center.clone().add(normalWorld.clone().multiplyScalar(distance));
+
+    setFocusTarget({
+      cameraPosition: [cameraPosition.x, cameraPosition.y, cameraPosition.z],
+      lookAt: [center.x, center.y, center.z],
+      originalPosition,
+      originalQuaternion,
+    });
+  }, [focusTarget, setFocusTarget, clearFocus, camera]);
 
   // Generate random character
   const randomChar = () => {
@@ -900,7 +1036,7 @@ function Screen({
   const pillHeight = 0.5;
   const borderRadius = pillHeight / 2; // Full pill shape
   const labelYOffset = 0.6; // Distance above screen (center of billboard)
-  const labelZOffset = 0.3; // Forward offset to create diagonal line
+  const labelZOffset = 2; // Forward offset to create diagonal line
   const lineEndY = lineStart[1] + labelYOffset - pillHeight / 2; // Connect to bottom of pill
 
   const borderGeometry = useMemo(
@@ -923,8 +1059,19 @@ function Screen({
       <mesh
         ref={panelRef}
         geometry={(nodes[panel] as THREE.Mesh).geometry}
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setHovered(true);
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={() => {
+          setHovered(false);
+          document.body.style.cursor = 'auto';
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleScreenClick();
+        }}
       >
         <meshBasicMaterial toneMapped={false}>
           <RenderTexture width={512} height={512} attach="map" anisotropy={16}>
