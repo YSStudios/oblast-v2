@@ -41,7 +41,7 @@ interface InstancesProps {
 
 export function Instances({ children, ...props }: InstancesProps) {
   const { nodes } = useGLTF(
-    "/models/computers_1-transformed.glb"
+    "/models/computers_2.glb"
   ) as unknown as GLTFResult;
   const instances = useMemo(
     () => ({
@@ -55,9 +55,7 @@ export function Instances({ children, ...props }: InstancesProps) {
       Object32: nodes.Object_178,
       Object36: nodes.Object_28,
       Object45: nodes.Object_206,
-      Object46: nodes.Object_207,
       Object47: nodes.Object_215,
-      Object48: nodes.Object_216,
       Sphere: nodes.Sphere,
     }),
     [nodes]
@@ -79,7 +77,7 @@ interface ComputersProps {
 
 export function Computers(props: ComputersProps) {
   const { nodes: n, materials: m } = useGLTF(
-    "/models/computers_1-transformed.glb"
+    "/models/computers_2.glb"
   ) as unknown as GLTFResult;
   const instances = useContext(context);
 
@@ -699,13 +697,13 @@ export function Computers(props: ComputersProps) {
       />
       <ScreenInteractive
         frame="Object_206"
-        panel="Object_207"
+        panel="LCDScreen003"
         position={[0.27, 1.53, -2.61]}
         description="Interactive Screen - Click to rotate the cube"
       />
       <ScreenText
         frame="Object_209"
-        panel="Object_210"
+        panel="LCDScreen001"
         y={5}
         position={[-1.43, 2.5, -1.8]}
         rotation={[0, 1, 0]}
@@ -714,7 +712,7 @@ export function Computers(props: ComputersProps) {
       <ScreenText
         invert
         frame="Object_212"
-        panel="Object_213"
+        panel="LCDScreen"
         x={-5}
         y={5}
         position={[-2.73, 0.63, -0.52]}
@@ -724,7 +722,7 @@ export function Computers(props: ComputersProps) {
       <ScreenText
         invert
         frame="Object_215"
-        panel="Object_216"
+        panel="LCDScreen005"
         position={[1.84, 0.38, -1.77]}
         rotation={[0, -Math.PI / 9, 0]}
         description="Status Monitor - Real-time data visualization"
@@ -732,7 +730,7 @@ export function Computers(props: ComputersProps) {
       <ScreenText
         invert
         frame="Object_218"
-        panel="Object_219"
+        panel="LCDScreen004"
         x={-5}
         position={[3.11, 2.15, -0.18]}
         rotation={[0, -0.79, 0]}
@@ -741,7 +739,7 @@ export function Computers(props: ComputersProps) {
       />
       <ScreenText
         frame="Object_221"
-        panel="Object_222"
+        panel="LCDScreen002"
         y={5}
         position={[-3.42, 3.06, 1.3]}
         rotation={[0, 1.22, 0]}
@@ -751,21 +749,21 @@ export function Computers(props: ComputersProps) {
       <ScreenText
         invert
         frame="Object_224"
-        panel="Object_225"
+        panel="LCDScreen006"
         position={[-3.9, 4.29, -2.64]}
         rotation={[0, 0.54, 0]}
         description="Control Interface - System configuration"
       />
       <ScreenText
         frame="Object_227"
-        panel="Object_228"
+        panel="LCDScreen007"
         position={[0.96, 4.28, -4.2]}
         rotation={[0, -0.65, 0]}
         description="Graphics Display - Rendering viewport"
       />
       <ScreenText
         frame="Object_230"
-        panel="Object_231"
+        panel="LCDScreen008"
         position={[4.68, 4.29, -1.56]}
         rotation={[0, -Math.PI / 3, 0]}
         description="Command Terminal - Input/Output stream"
@@ -793,12 +791,15 @@ function Screen({
   ...props
 }: ScreenProps) {
   const { nodes, materials } = useGLTF(
-    "/models/computers_1-transformed.glb"
+    "/models/computers_2.glb"
   ) as unknown as GLTFResult;
   const [hovered, setHovered] = useState(false);
   const textRef = useRef<THREE.Mesh>(null);
+  const panelRef = useRef<THREE.Mesh>(null);
+  const groupRef = useRef<THREE.Group>(null);
   const [displayText, setDisplayText] = useState("");
   const animationProgress = useRef(0);
+  const [lineStart, setLineStart] = useState<[number, number, number]>([0, 1.2, -0.15]);
 
   // Generate random character
   const randomChar = () => {
@@ -807,8 +808,37 @@ function Screen({
     return chars[Math.floor(Math.random() * chars.length)];
   };
 
-  // Animate text reveal
+  // Calculate line start position from LCD screen and animate text reveal
   useFrame((state, delta) => {
+    // Update line position when hovered - convert world to local coordinates
+    if (panelRef.current && groupRef.current && hovered) {
+      // Update matrices
+      panelRef.current.updateWorldMatrix(true, false);
+      groupRef.current.updateWorldMatrix(true, false);
+      
+      // Get bounding box in world space
+      const bbox = new THREE.Box3().setFromObject(panelRef.current);
+      const center = new THREE.Vector3();
+      bbox.getCenter(center);
+      
+      // Get the top center of the screen in world coordinates
+      const worldPos = new THREE.Vector3(center.x, bbox.max.y, center.z);
+      
+      // Convert world position to local coordinates of the group
+      groupRef.current.worldToLocal(worldPos);
+      const newStart: [number, number, number] = [worldPos.x, worldPos.y, worldPos.z];
+      
+      // Only update if significantly different to avoid unnecessary rerenders
+      if (
+        Math.abs(newStart[0] - lineStart[0]) > 0.01 ||
+        Math.abs(newStart[1] - lineStart[1]) > 0.01 ||
+        Math.abs(newStart[2] - lineStart[2]) > 0.01
+      ) {
+        setLineStart(newStart);
+      }
+    }
+
+    // Animate text reveal
     if (hovered && description) {
       animationProgress.current += delta * 1.5; // Speed of animation
 
@@ -869,6 +899,9 @@ function Screen({
   const pillWidth = textWidth + 0.4; // Add padding
   const pillHeight = 0.5;
   const borderRadius = pillHeight / 2; // Full pill shape
+  const labelYOffset = 0.6; // Distance above screen (center of billboard)
+  const labelZOffset = 0.3; // Forward offset to create diagonal line
+  const lineEndY = lineStart[1] + labelYOffset - pillHeight / 2; // Connect to bottom of pill
 
   const borderGeometry = useMemo(
     () => createPillGeometry(pillWidth + 0.04, pillHeight + 0.04, borderRadius),
@@ -880,7 +913,7 @@ function Screen({
   );
 
   return (
-    <group {...props}>
+    <group ref={groupRef} {...props}>
       <mesh
         castShadow
         receiveShadow
@@ -888,6 +921,7 @@ function Screen({
         material={materials.Texture}
       />
       <mesh
+        ref={panelRef}
         geometry={(nodes[panel] as THREE.Mesh).geometry}
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
@@ -901,11 +935,11 @@ function Screen({
 
       {hovered && description && (
         <>
-          {/* Line connecting top of monitor to label */}
+          {/* Line connecting top of LCDScreen to label */}
           <Line
             points={[
-              [0, 1.2, -0.15],
-              [0, 1.8, 0.3],
+              lineStart,
+              [lineStart[0], lineEndY, lineStart[2] + labelZOffset],
             ]}
             color="#35c19f"
             lineWidth={4}
@@ -921,7 +955,7 @@ function Screen({
             lockX={false}
             lockY={false}
             lockZ={false}
-            position={[0, 1.8, 0.3]}
+            position={[lineStart[0], lineStart[1] + labelYOffset, lineStart[2] + labelZOffset]}
           >
             {/* Border (pill shape) */}
             <mesh
@@ -1063,7 +1097,7 @@ interface LedsProps {
 function Leds({ instances }: LedsProps) {
   const ref = useRef<THREE.Group>(null);
   const { nodes } = useGLTF(
-    "/models/computers_1-transformed.glb"
+    "/models/computers_2.glb"
   ) as unknown as GLTFResult;
 
   useMemo(() => {
@@ -1094,57 +1128,57 @@ function Leds({ instances }: LedsProps) {
   return (
     <group ref={ref}>
       <instances.Sphere
-        position={[-0.41, 1.1, -2.21]}
-        scale={0.005}
+        position={[-0.408, 1.095, -2.212]}
+        scale={0.009}
         color={[1, 2, 1]}
       />
       <instances.Sphere
-        position={[0.59, 1.32, -2.22]}
-        scale={0.005}
+        position={[0.588, 1.323, -2.222]}
+        scale={0.009}
         color={[1, 2, 1]}
       />
       <instances.Sphere
-        position={[1.77, 1.91, -1.17]}
-        scale={0.005}
+        position={[1.772, 1.909, -1.165]}
+        scale={0.009}
         color={[1, 2, 1]}
       />
       <instances.Sphere
-        position={[2.44, 1.1, -0.79]}
-        scale={0.005}
+        position={[2.438, 1.096, -0.786]}
+        scale={0.009}
         color={[1, 2, 1]}
       />
       <instances.Sphere
-        position={[4.87, 3.8, -0.1]}
-        scale={0.005}
+        position={[4.868, 3.799, -0.097]}
+        scale={0.009}
         color={[1, 2, 1]}
       />
       <instances.Sphere
-        position={[1.93, 3.8, -3.69]}
-        scale={0.005}
+        position={[1.93, 3.795, -3.69]}
+        scale={0.009}
         color={[1, 2, 1]}
       />
       <instances.Sphere
-        position={[-2.35, 3.8, -3.48]}
-        scale={0.005}
+        position={[-2.346, 3.799, -3.479]}
+        scale={0.009}
         color={[1, 2, 1]}
       />
       <instances.Sphere
-        position={[-4.71, 4.59, -1.81]}
-        scale={0.005}
+        position={[-4.706, 4.589, -1.812]}
+        scale={0.009}
         color={[1, 2, 1]}
       />
       <instances.Sphere
-        position={[-3.03, 2.85, 1.19]}
-        scale={0.005}
+        position={[-3.032, 2.853, 1.195]}
+        scale={0.009}
         color={[1, 2, 1]}
       />
       <instances.Sphere
-        position={[-1.21, 1.73, -1.49]}
-        scale={0.005}
+        position={[-1.206, 1.731, -1.489]}
+        scale={0.009}
         color={[1, 2, 1]}
       />
     </group>
   );
 }
 
-useGLTF.preload("/models/computers_1-transformed.glb");
+useGLTF.preload("/models/computers_2.glb");
