@@ -797,6 +797,44 @@ function Screen({
   ) as unknown as GLTFResult;
   const [hovered, setHovered] = useState(false);
   const textRef = useRef<THREE.Mesh>(null);
+  const [displayText, setDisplayText] = useState("");
+  const animationProgress = useRef(0);
+
+  // Generate random character
+  const randomChar = () => {
+    const chars =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?";
+    return chars[Math.floor(Math.random() * chars.length)];
+  };
+
+  // Animate text reveal
+  useFrame((state, delta) => {
+    if (hovered && description) {
+      animationProgress.current += delta * 1.5; // Speed of animation
+
+      if (animationProgress.current >= 1) {
+        setDisplayText(description);
+      } else {
+        const progress = animationProgress.current;
+        const revealedChars = Math.floor(description.length * progress);
+
+        let newText = "";
+        for (let i = 0; i < description.length; i++) {
+          if (i < revealedChars) {
+            newText += description[i];
+          } else if (description[i] === " ") {
+            newText += " ";
+          } else {
+            newText += randomChar();
+          }
+        }
+        setDisplayText(newText);
+      }
+    } else {
+      animationProgress.current = 0;
+      setDisplayText("");
+    }
+  });
 
   // Create rounded rectangle (pill shape) geometry
   const createPillGeometry = (
@@ -867,7 +905,7 @@ function Screen({
           <Line
             points={[
               [0, 1.2, -0.15],
-              [0, 2.0, 0.3],
+              [0, 1.8, 0.3],
             ]}
             color="#35c19f"
             lineWidth={4}
@@ -930,7 +968,7 @@ function Screen({
               material-depthTest={false}
               material-depthWrite={false}
             >
-              {description}
+              {displayText}
             </Text>
           </Billboard>
         </>
