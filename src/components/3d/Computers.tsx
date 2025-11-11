@@ -1,7 +1,15 @@
 "use client";
 
 import * as THREE from "three";
-import { useMemo, useContext, createContext, useRef, ReactNode, FC, useState } from "react";
+import {
+  useMemo,
+  useContext,
+  createContext,
+  useRef,
+  ReactNode,
+  FC,
+  useState,
+} from "react";
 import { useFrame } from "@react-three/fiber";
 import {
   useGLTF,
@@ -9,6 +17,8 @@ import {
   RenderTexture,
   PerspectiveCamera,
   Text,
+  Billboard,
+  Line,
 } from "@react-three/drei";
 import { SpinningBox } from "./SpinningBox";
 import type { GLTF } from "three-stdlib";
@@ -30,7 +40,9 @@ interface InstancesProps {
 }
 
 export function Instances({ children, ...props }: InstancesProps) {
-  const { nodes } = useGLTF("/models/computers_1-transformed.glb") as unknown as GLTFResult;
+  const { nodes } = useGLTF(
+    "/models/computers_1-transformed.glb"
+  ) as unknown as GLTFResult;
   const instances = useMemo(
     () => ({
       Object: nodes.Object_4,
@@ -53,7 +65,9 @@ export function Instances({ children, ...props }: InstancesProps) {
   return (
     <Merged castShadow receiveShadow meshes={instances} {...props}>
       {(instances) => (
-        <context.Provider value={instances as InstancesContextType}>{children}</context.Provider>
+        <context.Provider value={instances as InstancesContextType}>
+          {children}
+        </context.Provider>
       )}
     </Merged>
   );
@@ -64,7 +78,9 @@ interface ComputersProps {
 }
 
 export function Computers(props: ComputersProps) {
-  const { nodes: n, materials: m } = useGLTF("/models/computers_1-transformed.glb") as unknown as GLTFResult;
+  const { nodes: n, materials: m } = useGLTF(
+    "/models/computers_1-transformed.glb"
+  ) as unknown as GLTFResult;
   const instances = useContext(context);
 
   if (!instances) return null;
@@ -685,6 +701,7 @@ export function Computers(props: ComputersProps) {
         frame="Object_206"
         panel="Object_207"
         position={[0.27, 1.53, -2.61]}
+        description="Interactive Screen - Click to rotate the cube"
       />
       <ScreenText
         frame="Object_209"
@@ -692,6 +709,7 @@ export function Computers(props: ComputersProps) {
         y={5}
         position={[-1.43, 2.5, -1.8]}
         rotation={[0, 1, 0]}
+        description="Display Monitor - Scrolling text animation"
       />
       <ScreenText
         invert
@@ -701,6 +719,7 @@ export function Computers(props: ComputersProps) {
         y={5}
         position={[-2.73, 0.63, -0.52]}
         rotation={[0, 1.09, 0]}
+        description="Terminal Screen - System output display"
       />
       <ScreenText
         invert
@@ -708,6 +727,7 @@ export function Computers(props: ComputersProps) {
         panel="Object_216"
         position={[1.84, 0.38, -1.77]}
         rotation={[0, -Math.PI / 9, 0]}
+        description="Status Monitor - Real-time data visualization"
       />
       <ScreenText
         invert
@@ -717,6 +737,7 @@ export function Computers(props: ComputersProps) {
         position={[3.11, 2.15, -0.18]}
         rotation={[0, -0.79, 0]}
         scale={0.81}
+        description="Debug Console - Code execution trace"
       />
       <ScreenText
         frame="Object_221"
@@ -725,6 +746,7 @@ export function Computers(props: ComputersProps) {
         position={[-3.42, 3.06, 1.3]}
         rotation={[0, 1.22, 0]}
         scale={0.9}
+        description="Information Panel - Network statistics"
       />
       <ScreenText
         invert
@@ -732,18 +754,21 @@ export function Computers(props: ComputersProps) {
         panel="Object_225"
         position={[-3.9, 4.29, -2.64]}
         rotation={[0, 0.54, 0]}
+        description="Control Interface - System configuration"
       />
       <ScreenText
         frame="Object_227"
         panel="Object_228"
         position={[0.96, 4.28, -4.2]}
         rotation={[0, -0.65, 0]}
+        description="Graphics Display - Rendering viewport"
       />
       <ScreenText
         frame="Object_230"
         panel="Object_231"
         position={[4.68, 4.29, -1.56]}
         rotation={[0, -Math.PI / 3, 0]}
+        description="Command Terminal - Input/Output stream"
       />
       <Leds instances={instances} />
     </group>
@@ -757,10 +782,65 @@ interface ScreenProps {
   position?: [number, number, number];
   rotation?: [number, number, number];
   scale?: number;
+  description?: string;
 }
 
-function Screen({ frame, panel, children, ...props }: ScreenProps) {
-  const { nodes, materials } = useGLTF("/models/computers_1-transformed.glb") as unknown as GLTFResult;
+function Screen({
+  frame,
+  panel,
+  children,
+  description,
+  ...props
+}: ScreenProps) {
+  const { nodes, materials } = useGLTF(
+    "/models/computers_1-transformed.glb"
+  ) as unknown as GLTFResult;
+  const [hovered, setHovered] = useState(false);
+  const textRef = useRef<THREE.Mesh>(null);
+
+  // Create rounded rectangle (pill shape) geometry
+  const createPillGeometry = (
+    width: number,
+    height: number,
+    radius: number
+  ) => {
+    const shape = new THREE.Shape();
+    const x = -width / 2;
+    const y = -height / 2;
+
+    shape.moveTo(x + radius, y);
+    shape.lineTo(x + width - radius, y);
+    shape.quadraticCurveTo(x + width, y, x + width, y + radius);
+    shape.lineTo(x + width, y + height - radius);
+    shape.quadraticCurveTo(
+      x + width,
+      y + height,
+      x + width - radius,
+      y + height
+    );
+    shape.lineTo(x + radius, y + height);
+    shape.quadraticCurveTo(x, y + height, x, y + height - radius);
+    shape.lineTo(x, y + radius);
+    shape.quadraticCurveTo(x, y, x + radius, y);
+
+    return new THREE.ShapeGeometry(shape);
+  };
+
+  // Calculate text width based on character count (approximate)
+  const textWidth = description ? description.length * 0.1 : 0;
+  const pillWidth = textWidth + 0.3; // Add padding
+  const pillHeight = 0.45;
+  const borderRadius = pillHeight / 2; // Full pill shape
+
+  const borderGeometry = useMemo(
+    () => createPillGeometry(pillWidth + 0.04, pillHeight + 0.04, borderRadius),
+    [pillWidth, pillHeight, borderRadius]
+  );
+  const backgroundGeometry = useMemo(
+    () => createPillGeometry(pillWidth, pillHeight, borderRadius),
+    [pillWidth, pillHeight, borderRadius]
+  );
+
   return (
     <group {...props}>
       <mesh
@@ -769,13 +849,92 @@ function Screen({ frame, panel, children, ...props }: ScreenProps) {
         geometry={(nodes[frame] as THREE.Mesh).geometry}
         material={materials.Texture}
       />
-      <mesh geometry={(nodes[panel] as THREE.Mesh).geometry}>
+      <mesh
+        geometry={(nodes[panel] as THREE.Mesh).geometry}
+        onPointerOver={() => setHovered(true)}
+        onPointerOut={() => setHovered(false)}
+      >
         <meshBasicMaterial toneMapped={false}>
           <RenderTexture width={512} height={512} attach="map" anisotropy={16}>
             {children}
           </RenderTexture>
         </meshBasicMaterial>
       </mesh>
+
+      {hovered && description && (
+        <>
+          {/* Line connecting top of monitor to label */}
+          <Line
+            points={[
+              [0, 1.2, -0.15],
+              [0, 2.0, 0.3],
+            ]}
+            color="#35c19f"
+            lineWidth={4}
+            dashed={false}
+            renderOrder={998}
+            depthTest={false}
+            transparent
+            opacity={0.9}
+          />
+
+          <Billboard
+            follow={true}
+            lockX={false}
+            lockY={false}
+            lockZ={false}
+            position={[0, 1.8, 0.3]}
+          >
+            {/* Border (pill shape) */}
+            <mesh
+              position={[0, 0, -0.001]}
+              renderOrder={1000}
+              geometry={borderGeometry}
+            >
+              <meshBasicMaterial
+                color="#35c19f"
+                transparent
+                opacity={1}
+                depthTest={false}
+                depthWrite={false}
+              />
+            </mesh>
+
+            {/* Background (pill shape) */}
+            <mesh
+              position={[0, 0, 0]}
+              renderOrder={1001}
+              geometry={backgroundGeometry}
+            >
+              <meshBasicMaterial
+                color="#000000"
+                transparent
+                opacity={0.9}
+                depthTest={false}
+                depthWrite={false}
+              />
+            </mesh>
+
+            {/* Text */}
+            <Text
+              ref={textRef}
+              position={[0, 0, 0.001]}
+              fontSize={0.14}
+              color="#35c19f"
+              anchorX="center"
+              anchorY="middle"
+              font="/fonts/Inter-Medium.woff"
+              maxWidth={pillWidth - 0.2}
+              depthOffset={-1}
+              renderOrder={1002}
+              material-depthTest={false}
+              material-depthWrite={false}
+            >
+              {description}
+            </Text>
+          </Billboard>
+        </>
+      )}
     </group>
   );
 }
@@ -789,9 +948,16 @@ interface ScreenTextProps {
   position?: [number, number, number];
   rotation?: [number, number, number];
   scale?: number;
+  description?: string;
 }
 
-function ScreenText({ invert, x = 0, y = 1.2, ...props }: ScreenTextProps) {
+function ScreenText({
+  invert,
+  x = 0,
+  y = 1.2,
+  description,
+  ...props
+}: ScreenTextProps) {
   const textRef = useRef<THREE.Mesh>(null);
   const [rand] = useState(() => Math.random() * 10000);
   useFrame((state) => {
@@ -801,7 +967,7 @@ function ScreenText({ invert, x = 0, y = 1.2, ...props }: ScreenTextProps) {
     }
   });
   return (
-    <Screen {...props}>
+    <Screen {...props} description={description}>
       <PerspectiveCamera
         makeDefault
         manual
@@ -831,11 +997,12 @@ interface ScreenInteractiveProps {
   position?: [number, number, number];
   rotation?: [number, number, number];
   scale?: number;
+  description?: string;
 }
 
-function ScreenInteractive(props: ScreenInteractiveProps) {
+function ScreenInteractive({ description, ...props }: ScreenInteractiveProps) {
   return (
-    <Screen {...props}>
+    <Screen {...props} description={description}>
       <PerspectiveCamera
         makeDefault
         manual
@@ -857,7 +1024,9 @@ interface LedsProps {
 
 function Leds({ instances }: LedsProps) {
   const ref = useRef<THREE.Group>(null);
-  const { nodes } = useGLTF("/models/computers_1-transformed.glb") as unknown as GLTFResult;
+  const { nodes } = useGLTF(
+    "/models/computers_1-transformed.glb"
+  ) as unknown as GLTFResult;
 
   useMemo(() => {
     const sphere = nodes.Sphere as THREE.Mesh;

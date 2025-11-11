@@ -69,3 +69,18 @@ input:focus {
   outline: none;
   box-shadow: none !important;
 }
+
+.screen-label {
+  background: rgba(0, 0, 0, 0.95);
+  color: #35c19f;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  white-space: nowrap;
+  border: 2px solid #35c19f;
+  font-family: 'Inter', sans-serif;
+  box-shadow: 0 4px 20px rgba(53, 193, 159, 0.3);
+  backdrop-filter: blur(10px);
+  text-align: center;
+}
