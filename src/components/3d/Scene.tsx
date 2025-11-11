@@ -6,7 +6,7 @@ import { EffectComposer, Bloom, DepthOfField } from '@react-three/postprocessing
 import { easing } from 'maath'
 import { suspend } from 'suspend-react'
 import { Instances, Computers } from './Computers'
-import * as THREE from 'three'
+import type { Vector3, BufferGeometry } from 'three'
 
 const suzi = import('@pmndrs/assets/models/bunny.glb')
 
@@ -52,7 +52,7 @@ export default function Scene() {
         <Bun scale={0.4} position={[0, 0.3, 0.5]} rotation={[0, -Math.PI * 0.85, 0]} />
         <pointLight distance={1.5} intensity={1} position={[-0.15, 0.7, 0]} color="orange" />
       </group>
-      <EffectComposer disableNormalPass>
+      <EffectComposer>
         <Bloom luminanceThreshold={0} mipmapBlur luminanceSmoothing={0.0} intensity={3} />
         <DepthOfField target={[0, 0, 5.5]} focalLength={0.05} bokehScale={2} height={700} />
       </EffectComposer>
@@ -69,7 +69,8 @@ interface BunProps {
 }
 
 function Bun(props: BunProps) {
-  const { nodes } = useGLTF(suspend(suzi).default) as any
+  const model = suspend(suzi) as { default: string }
+  const { nodes } = useGLTF(model.default) as unknown as { nodes: { mesh: { geometry: BufferGeometry } } }
   return (
     <mesh receiveShadow castShadow geometry={nodes.mesh.geometry} {...props}>
       <meshStandardMaterial color="#222" roughness={0.5} />
@@ -79,9 +80,14 @@ function Bun(props: BunProps) {
 
 function CameraRig() {
   useFrame((state, delta) => {
+    const target: [number, number, number] = [
+      -1 + (state.pointer.x * state.viewport.width) / 3,
+      (1 + state.pointer.y) / 2,
+      5.5
+    ]
     easing.damp3(
-      state.camera.position as any,
-      [-1 + (state.pointer.x * state.viewport.width) / 3, (1 + state.pointer.y) / 2, 5.5] as any,
+      state.camera.position as Vector3,
+      target,
       0.5,
       delta
     )

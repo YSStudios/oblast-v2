@@ -1,7 +1,7 @@
 "use client";
 
 import * as THREE from "three";
-import { useMemo, useContext, createContext, useRef, ReactNode } from "react";
+import { useMemo, useContext, createContext, useRef, ReactNode, FC, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import {
   useGLTF,
@@ -11,43 +11,26 @@ import {
   Text,
 } from "@react-three/drei";
 import { SpinningBox } from "./SpinningBox";
-import { GLTF } from "three-stdlib";
+import type { GLTF } from "three-stdlib";
 
 THREE.ColorManagement.enabled = true;
 
 type GLTFResult = GLTF & {
-  nodes: Record<string, THREE.Mesh>;
+  nodes: Record<string, THREE.Object3D>;
   materials: Record<string, THREE.Material>;
 };
 
-interface InstancesContextType {
-  Object: JSX.Element;
-  Object1: JSX.Element;
-  Object3: JSX.Element;
-  Object13: JSX.Element;
-  Object14: JSX.Element;
-  Object23: JSX.Element;
-  Object24: JSX.Element;
-  Object32: JSX.Element;
-  Object36: JSX.Element;
-  Object45: JSX.Element;
-  Object46: JSX.Element;
-  Object47: JSX.Element;
-  Object48: JSX.Element;
-  Sphere: JSX.Element;
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type InstancesContextType = Record<string, FC<any>>;
 
 const context = createContext<InstancesContextType | null>(null);
 
 interface InstancesProps {
   children: ReactNode;
-  [key: string]: any;
 }
 
 export function Instances({ children, ...props }: InstancesProps) {
-  const { nodes } = useGLTF(
-    "/models/computers_1-transformed.glb"
-  ) as GLTFResult;
+  const { nodes } = useGLTF("/models/computers_1-transformed.glb") as unknown as GLTFResult;
   const instances = useMemo(
     () => ({
       Object: nodes.Object_4,
@@ -69,8 +52,8 @@ export function Instances({ children, ...props }: InstancesProps) {
   );
   return (
     <Merged castShadow receiveShadow meshes={instances} {...props}>
-      {(instances: any) => (
-        <context.Provider value={instances} children={children} />
+      {(instances) => (
+        <context.Provider value={instances as InstancesContextType}>{children}</context.Provider>
       )}
     </Merged>
   );
@@ -78,13 +61,10 @@ export function Instances({ children, ...props }: InstancesProps) {
 
 interface ComputersProps {
   scale?: number;
-  [key: string]: any;
 }
 
 export function Computers(props: ComputersProps) {
-  const { nodes: n, materials: m } = useGLTF(
-    "/models/computers_1-transformed.glb"
-  ) as GLTFResult;
+  const { nodes: n, materials: m } = useGLTF("/models/computers_1-transformed.glb") as unknown as GLTFResult;
   const instances = useContext(context);
 
   if (!instances) return null;
@@ -129,7 +109,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_24.geometry}
+        geometry={(n.Object_24 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[-2.42, 0.94, -2.25]}
         rotation={[0, 0.14, Math.PI / 2]}
@@ -288,7 +268,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_140.geometry}
+        geometry={(n.Object_140 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[5.53, 2.18, 0.17]}
         rotation={[-Math.PI, 0, 0]}
@@ -297,7 +277,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_144.geometry}
+        geometry={(n.Object_144 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[5.74, 1.57, 0.05]}
         rotation={[-Math.PI, 0, 0]}
@@ -306,7 +286,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_148.geometry}
+        geometry={(n.Object_148 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[5.65, 2.79, 0.11]}
         rotation={[-Math.PI, 0, 0]}
@@ -315,7 +295,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_152.geometry}
+        geometry={(n.Object_152 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[5.46, 3.41, 0.26]}
         rotation={[-Math.PI, 0, 0]}
@@ -324,7 +304,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_156.geometry}
+        geometry={(n.Object_156 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[4.86, 0, -2.54]}
         rotation={[-Math.PI, 0, 0]}
@@ -333,7 +313,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_160.geometry}
+        geometry={(n.Object_160 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[5.06, 0, -1.6]}
         rotation={[-Math.PI, 0, 0]}
@@ -342,7 +322,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_164.geometry}
+        geometry={(n.Object_164 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[2.59, 0, -4]}
         rotation={[-Math.PI, 0, 0]}
@@ -351,7 +331,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_168.geometry}
+        geometry={(n.Object_168 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[1.66, 0, -4.54]}
         rotation={[-Math.PI, 0, 0]}
@@ -360,7 +340,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_170.geometry}
+        geometry={(n.Object_170 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[0.59, 0, -4.7]}
         rotation={[-Math.PI, 0, 0]}
@@ -379,7 +359,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_176.geometry}
+        geometry={(n.Object_176 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[1.33, 1.83, -3.82]}
         rotation={[-Math.PI, 0, 0]}
@@ -388,7 +368,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_180.geometry}
+        geometry={(n.Object_180 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[4.86, 2.14, -2.54]}
         rotation={[-Math.PI, 0, 0]}
@@ -397,7 +377,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_184.geometry}
+        geometry={(n.Object_184 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[5.06, 2.14, -1.6]}
         rotation={[-Math.PI, 0, 0]}
@@ -406,7 +386,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_188.geometry}
+        geometry={(n.Object_188 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[2.59, 2.14, -4]}
         rotation={[-Math.PI, 0, 0]}
@@ -415,7 +395,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_192.geometry}
+        geometry={(n.Object_192 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[1.66, 2.14, -4.54]}
         rotation={[-Math.PI, 0, 0]}
@@ -424,7 +404,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_194.geometry}
+        geometry={(n.Object_194 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[0.59, 2.14, -4.7]}
         rotation={[-Math.PI, 0, 0]}
@@ -443,7 +423,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_200.geometry}
+        geometry={(n.Object_200 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[0.75, 3.98, -4.66]}
         rotation={[-Math.PI, 0, 0]}
@@ -452,7 +432,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_18.geometry}
+        geometry={(n.Object_18 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[-0.19, 0, -2.96]}
         rotation={[0, -0.06, 0]}
@@ -566,7 +546,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_142.geometry}
+        geometry={(n.Object_142 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[5.79, 0.94, 0.18]}
         rotation={[-Math.PI, 0, 0]}
@@ -575,7 +555,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_146.geometry}
+        geometry={(n.Object_146 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[5.43, 0.32, 0.37]}
         rotation={[-Math.PI, 0, 0]}
@@ -584,7 +564,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_150.geometry}
+        geometry={(n.Object_150 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[5.56, 4.03, 0.35]}
         rotation={[-Math.PI, 0, 0]}
@@ -593,7 +573,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_154.geometry}
+        geometry={(n.Object_154 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[5.87, 4.66, 0.08]}
         rotation={[-Math.PI, 0, 0]}
@@ -602,7 +582,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_158.geometry}
+        geometry={(n.Object_158 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[5.53, 0, -0.85]}
         rotation={[-Math.PI, 0, 0]}
@@ -611,7 +591,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_162.geometry}
+        geometry={(n.Object_162 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[4.05, 0, -2.96]}
         rotation={[-Math.PI, 0, 0]}
@@ -620,7 +600,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_166.geometry}
+        geometry={(n.Object_166 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[3.29, 0, -3.1]}
         rotation={[-Math.PI, 0, 0]}
@@ -634,7 +614,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_182.geometry}
+        geometry={(n.Object_182 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[5.53, 2.14, -0.85]}
         rotation={[-Math.PI, 0, 0]}
@@ -643,7 +623,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_186.geometry}
+        geometry={(n.Object_186 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[4.05, 2.14, -2.96]}
         rotation={[-Math.PI, 0, 0]}
@@ -652,7 +632,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_190.geometry}
+        geometry={(n.Object_190 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[3.3, 2.14, -3.31]}
         rotation={[-Math.PI, 0, 0]}
@@ -695,7 +675,7 @@ export function Computers(props: ComputersProps) {
       <mesh
         castShadow
         receiveShadow
-        geometry={n.Object_204.geometry}
+        geometry={(n.Object_204 as THREE.Mesh).geometry}
         material={m.Texture}
         position={[3.2, 4.29, -3.09]}
         rotation={[-Math.PI, 0.56, 0]}
@@ -774,22 +754,22 @@ interface ScreenProps {
   frame: string;
   panel: string;
   children: ReactNode;
-  [key: string]: any;
+  position?: [number, number, number];
+  rotation?: [number, number, number];
+  scale?: number;
 }
 
 function Screen({ frame, panel, children, ...props }: ScreenProps) {
-  const { nodes, materials } = useGLTF(
-    "/models/computers_1-transformed.glb"
-  ) as GLTFResult;
+  const { nodes, materials } = useGLTF("/models/computers_1-transformed.glb") as unknown as GLTFResult;
   return (
     <group {...props}>
       <mesh
         castShadow
         receiveShadow
-        geometry={nodes[frame].geometry}
+        geometry={(nodes[frame] as THREE.Mesh).geometry}
         material={materials.Texture}
       />
-      <mesh geometry={nodes[panel].geometry}>
+      <mesh geometry={(nodes[panel] as THREE.Mesh).geometry}>
         <meshBasicMaterial toneMapped={false}>
           <RenderTexture width={512} height={512} attach="map" anisotropy={16}>
             {children}
@@ -806,12 +786,14 @@ interface ScreenTextProps {
   y?: number;
   frame: string;
   panel: string;
-  [key: string]: any;
+  position?: [number, number, number];
+  rotation?: [number, number, number];
+  scale?: number;
 }
 
 function ScreenText({ invert, x = 0, y = 1.2, ...props }: ScreenTextProps) {
-  const textRef = useRef<any>(null);
-  const rand = Math.random() * 10000;
+  const textRef = useRef<THREE.Mesh>(null);
+  const [rand] = useState(() => Math.random() * 10000);
   useFrame((state) => {
     if (textRef.current) {
       textRef.current.position.x =
@@ -846,7 +828,9 @@ function ScreenText({ invert, x = 0, y = 1.2, ...props }: ScreenTextProps) {
 interface ScreenInteractiveProps {
   frame: string;
   panel: string;
-  [key: string]: any;
+  position?: [number, number, number];
+  rotation?: [number, number, number];
+  scale?: number;
 }
 
 function ScreenInteractive(props: ScreenInteractiveProps) {
@@ -873,21 +857,30 @@ interface LedsProps {
 
 function Leds({ instances }: LedsProps) {
   const ref = useRef<THREE.Group>(null);
-  const { nodes } = useGLTF(
-    "/models/computers_1-transformed.glb"
-  ) as GLTFResult;
+  const { nodes } = useGLTF("/models/computers_1-transformed.glb") as unknown as GLTFResult;
+
   useMemo(() => {
-    nodes.Sphere.material = new THREE.MeshBasicMaterial();
-    (nodes.Sphere.material as THREE.MeshBasicMaterial).toneMapped = false;
+    const sphere = nodes.Sphere as THREE.Mesh;
+    if (sphere.material) {
+      const material = new THREE.MeshBasicMaterial();
+      material.toneMapped = false;
+      // eslint-disable-next-line react-hooks/immutability
+      sphere.material = material;
+    }
   }, [nodes.Sphere]);
+
   useFrame((state) => {
     if (ref.current) {
-      ref.current.children.forEach((instance: any) => {
-        const rand = Math.abs(2 + instance.position.x);
-        const t = Math.round(
-          (1 + Math.sin(rand * 10000 + state.clock.elapsedTime * rand)) / 2
-        );
-        instance.color.setRGB(0, t * 1.1, t);
+      ref.current.children.forEach((instance) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const instanceWithColor = instance as any;
+        if (instanceWithColor.color) {
+          const rand = Math.abs(2 + instance.position.x);
+          const t = Math.round(
+            (1 + Math.sin(rand * 10000 + state.clock.elapsedTime * rand)) / 2
+          );
+          instanceWithColor.color.setRGB(0, t * 1.1, t);
+        }
       });
     }
   });
