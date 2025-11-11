@@ -865,9 +865,9 @@ function Screen({
   };
 
   // Calculate text width based on character count (approximate)
-  const textWidth = description ? description.length * 0.1 : 0;
-  const pillWidth = textWidth + 0.3; // Add padding
-  const pillHeight = 0.45;
+  const textWidth = description ? description.length * 0.11 : 0;
+  const pillWidth = textWidth + 0.4; // Add padding
+  const pillHeight = 0.5;
   const borderRadius = pillHeight / 2; // Full pill shape
 
   const borderGeometry = useMemo(
@@ -947,7 +947,7 @@ function Screen({
               <meshBasicMaterial
                 color="#000000"
                 transparent
-                opacity={0.9}
+                opacity={0.95}
                 depthTest={false}
                 depthWrite={false}
               />
@@ -957,7 +957,7 @@ function Screen({
             <Text
               ref={textRef}
               position={[0, 0, 0.001]}
-              fontSize={0.14}
+              fontSize={0.16}
               color="#35c19f"
               anchorX="center"
               anchorY="middle"
