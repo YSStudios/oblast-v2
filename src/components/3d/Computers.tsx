@@ -40,6 +40,7 @@ interface ScreenFocusContextType {
   clearFocus: () => void;
   completeClearFocus: () => void;
   isTransitioning: boolean;
+  transitionStartTime: number | null;
   mouseFollowEnabled: boolean;
   toggleMouseFollow: () => void;
 }
@@ -49,21 +50,25 @@ const ScreenFocusContext = createContext<ScreenFocusContextType | null>(null);
 export function ScreenFocusProvider({ children }: { children: ReactNode }) {
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [transitionStartTime, setTransitionStartTime] = useState<number | null>(null);
   const [mouseFollowEnabled, setMouseFollowEnabled] = useState(true);
-  
+
   const clearFocus = useCallback(() => {
     setIsTransitioning(true);
+    setTransitionStartTime(Date.now());
     // Don't clear focus target immediately - let the transition complete
   }, []);
 
   const handleSetFocus = useCallback((target: FocusTarget) => {
     setIsTransitioning(false);
+    setTransitionStartTime(null);
     setFocusTarget(target);
   }, []);
 
   const completeClearFocus = useCallback(() => {
     setFocusTarget(null);
     setIsTransitioning(false);
+    setTransitionStartTime(null);
   }, []);
 
   const toggleMouseFollow = useCallback(() => {
@@ -71,12 +76,13 @@ export function ScreenFocusProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <ScreenFocusContext.Provider value={{ 
-      focusTarget, 
-      setFocusTarget: handleSetFocus, 
+    <ScreenFocusContext.Provider value={{
+      focusTarget,
+      setFocusTarget: handleSetFocus,
       clearFocus,
       completeClearFocus,
       isTransitioning,
+      transitionStartTime,
       mouseFollowEnabled,
       toggleMouseFollow
     }}>
@@ -868,15 +874,16 @@ function Screen({
   const [displayText, setDisplayText] = useState("");
   const animationProgress = useRef(0);
   const [lineStart, setLineStart] = useState<[number, number, number]>([0, 1.2, -0.15]);
-  const { focusTarget, setFocusTarget, clearFocus } = useScreenFocus();
+  const { focusTarget, setFocusTarget, clearFocus, isTransitioning } = useScreenFocus();
   const { camera } = useThree();
 
   // Calculate optimal camera position for this screen
   const handleScreenClick = useCallback(() => {
     if (!panelRef.current || !groupRef.current) return;
 
-    // If this screen is already focused, unfocus it
-    if (focusTarget) {
+    // If this screen is already focused and NOT transitioning, unfocus it
+    // If transitioning, allow setting new focus (interrupts/cancels the transition)
+    if (focusTarget && !isTransitioning) {
       clearFocus();
       return;
     }
@@ -935,7 +942,7 @@ function Screen({
       originalPosition,
       originalQuaternion,
     });
-  }, [focusTarget, setFocusTarget, clearFocus, camera]);
+  }, [focusTarget, setFocusTarget, clearFocus, camera, isTransitioning]);
 
   // Generate random character
   const randomChar = () => {

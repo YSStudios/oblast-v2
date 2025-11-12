@@ -7,7 +7,7 @@ import { easing } from 'maath'
 import { suspend } from 'suspend-react'
 import { Instances, Computers, ScreenFocusProvider, useScreenFocus } from './Computers'
 import type { Vector3, BufferGeometry } from 'three'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 
 const suzi = import('@pmndrs/assets/models/bunny.glb')
@@ -83,7 +83,9 @@ function Bun(props: BunProps) {
 }
 
 function CameraRig() {
-  const { focusTarget, clearFocus, completeClearFocus, isTransitioning, mouseFollowEnabled, toggleMouseFollow } = useScreenFocus()
+  const { focusTarget, clearFocus, completeClearFocus, isTransitioning, transitionStartTime, mouseFollowEnabled, toggleMouseFollow } = useScreenFocus()
+  const previousPosition = useRef<THREE.Vector3>(new THREE.Vector3())
+  const previousPointer = useRef({ x: 0, y: 0 })
 
   useFrame((state, delta) => {
     if (focusTarget && !isTransitioning) {
@@ -103,35 +105,54 @@ function CameraRig() {
       
       // Smoothly interpolate the camera's rotation
       state.camera.quaternion.slerp(tempCamera.quaternion, delta * 3)
+
+      // Update previous position and pointer for next frame
+      previousPosition.current.copy(state.camera.position)
+      previousPointer.current = { x: state.pointer.x, y: state.pointer.y }
     } else if (isTransitioning && focusTarget) {
-      // Transition back to original position and rotation
-      // During transition, ignore mouse input to prevent jerking
+      // Transition back - animate exactly like zoom-in for symmetry
+      const mouseFollowTarget: [number, number, number] = [
+        -1 + (state.pointer.x * state.viewport.width) / 3,
+        (1 + state.pointer.y) / 2,
+        5.5
+      ]
+
+      // Smoothly move to mouse-follow position
       easing.damp3(
         state.camera.position as Vector3,
-        focusTarget.originalPosition,
-        0.25,  // Slightly slower for smoother transition
+        mouseFollowTarget,
+        1.2,  // Match normal mode damping for smooth transition
         delta
       )
-      
-      // Smoothly interpolate back to original rotation
-      const originalQuat = new THREE.Quaternion(
-        focusTarget.originalQuaternion[0],
-        focusTarget.originalQuaternion[1],
-        focusTarget.originalQuaternion[2],
-        focusTarget.originalQuaternion[3]
-      )
-      state.camera.quaternion.slerp(originalQuat, delta * 2)  // Slower rotation for smoothness
-      
-      // Check if we're very close to the original position to complete the transition
-      const distanceToOriginal = state.camera.position.distanceTo(
-        new THREE.Vector3(...focusTarget.originalPosition)
-      )
-      const quatDifference = state.camera.quaternion.angleTo(originalQuat)
-      
-      // Much tighter tolerance - wait until we're very close
-      if (distanceToOriginal < 0.005 && quatDifference < 0.005) {
+
+      // Gradually transition from looking at screen to looking at origin
+      const elapsed = transitionStartTime ? Date.now() - transitionStartTime : 0
+      const transitionProgress = Math.min(elapsed / 2000, 1) // 2 second transition
+
+      // Interpolate lookAt target from screen position to origin
+      const screenLookAt = new THREE.Vector3(...focusTarget.lookAt)
+      const originLookAt = new THREE.Vector3(0, 0, 0)
+      const currentLookAt = screenLookAt.lerp(originLookAt, transitionProgress)
+
+      // Calculate target rotation based on interpolated lookAt
+      const targetCamera = new THREE.PerspectiveCamera()
+      targetCamera.position.copy(state.camera.position)
+      targetCamera.lookAt(currentLookAt)
+
+      // Gradually increase slerp speed over time for smooth blending into normal mode
+      const slerpSpeed = 1 + (9 * transitionProgress) // Blend from 1 to 10 (slower start)
+
+      state.camera.quaternion.slerp(targetCamera.quaternion, delta * slerpSpeed)
+
+      // Complete transition after rotation speed has ramped up
+      if (elapsed > 2000) {
         completeClearFocus()
       }
+
+      previousPointer.current = { x: state.pointer.x, y: state.pointer.y }
+
+      // Update previous position for next frame
+      previousPosition.current.copy(state.camera.position)
     } else if (mouseFollowEnabled) {
       // Normal mouse-following behavior (only if enabled)
       const target: [number, number, number] = [
@@ -142,12 +163,25 @@ function CameraRig() {
       easing.damp3(
         state.camera.position as Vector3,
         target,
-        0.5,
+        1.2,  // Higher damping = slower, gentler movement
         delta
       )
-      state.camera.lookAt(0, 0, 0)
+
+      // Use slerp for smooth rotation to prevent snap when coming from transition
+      // Very fast interpolation (delta * 10) makes it nearly instant but smooth
+      const targetCamera = new THREE.PerspectiveCamera()
+      targetCamera.position.copy(state.camera.position)
+      targetCamera.lookAt(0, 0, 0)
+      state.camera.quaternion.slerp(targetCamera.quaternion, delta * 10)
+
+      // Update previous position and pointer for next frame
+      previousPosition.current.copy(state.camera.position)
+      previousPointer.current = { x: state.pointer.x, y: state.pointer.y }
+    } else {
+      // Update previous position and pointer even when stationary
+      previousPosition.current.copy(state.camera.position)
+      previousPointer.current = { x: state.pointer.x, y: state.pointer.y }
     }
-    // If mouseFollowEnabled is false, camera stays in current position
   })
 
   // Handle keyboard shortcuts
