@@ -25,20 +25,12 @@ const Scene = dynamic(() => import("@/components/3d/Scene"), {
 
 export default function Home() {
   return (
-    <div
-      style={{
-        width: "100%",
-        height: "100vh",
-        margin: 0,
-        padding: 0,
-        overflow: "hidden",
-      }}
-    >
+    <>
       <Suspense fallback={null}>
         <Scene />
       </Suspense>
       <Overlay />
-    </div>
+    </>
   );
 }
 

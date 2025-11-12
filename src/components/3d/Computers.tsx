@@ -1100,7 +1100,7 @@ function Screen({
         </meshBasicMaterial>
       </mesh>
 
-      {hovered && description && (
+      {hovered && description && !focusTarget && (
         <>
           {/* Line connecting top of LCDScreen to label */}
           <Line
