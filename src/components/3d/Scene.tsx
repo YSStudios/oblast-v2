@@ -14,22 +14,48 @@ import {
   Computers,
   ScreenFocusProvider,
   useScreenFocus,
+  CAMERA_FOCUS_CONFIG,
 } from "./Computers";
 import type { Vector3, BufferGeometry } from "three";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
 const suzi = import("@pmndrs/assets/models/bunny.glb");
 
+// Camera transition configuration - adjust these values to change how smoothly/fast the camera moves when focusing
+const CAMERA_TRANSITION_CONFIG = {
+  // Position damping: controls how fast the camera moves to the focus position
+  // Lower = slower/smoother movement (e.g., 0.2), Higher = faster movement (e.g., 0.5)
+  positionDamping: 0.3,
+  
+  // Rotation speed: controls how fast the camera rotates to look at the screen
+  // Lower = slower rotation (e.g., delta * 2), Higher = faster rotation (e.g., delta * 5)
+  rotationSpeed: 3,
+} as const;
+
 export default function Scene() {
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure Canvas only renders on client to prevent R3F hook errors during hydration
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div style={{ width: "100%", height: "100vh", background: "black" }} />
+    );
+  }
+
   return (
-    <Canvas
-      shadows
-      dpr={[1, 1.5]}
-      camera={{ position: [0, 1, 5.5], fov: 45, near: 1, far: 20 }}
-      eventPrefix="client"
-      style={{ width: "100%", height: "100vh" }}
-    >
+    <div style={{ width: "100%", height: "100vh" }}>
+      <Canvas
+        shadows
+        dpr={[1, 1.5]}
+        camera={{ position: [0, 1, 5.5], fov: 45, near: 1, far: 20 }}
+        eventPrefix="client"
+      >
       <ScreenFocusProvider>
         <color attach="background" args={["black"]} />
         <hemisphereLight intensity={0.15} groundColor="black" />
@@ -73,24 +99,12 @@ export default function Scene() {
             color="orange"
           />
         </group>
-        <EffectComposer>
-          <Bloom
-            luminanceThreshold={0}
-            mipmapBlur
-            luminanceSmoothing={0.0}
-            intensity={3}
-          />
-          <DepthOfField
-            target={[0, 0, 5.5]}
-            focalLength={0.05}
-            bokehScale={2}
-            height={700}
-          />
-        </EffectComposer>
+        <Effects />
         <CameraRig />
         <BakeShadows />
       </ScreenFocusProvider>
     </Canvas>
+    </div>
   );
 }
 
@@ -112,6 +126,32 @@ function Bun(props: BunProps) {
   );
 }
 
+function Effects() {
+  const { focusTarget, isTransitioning } = useScreenFocus();
+  
+  // Disable depth of field when focused on a screen
+  const isFocused = focusTarget !== null && !isTransitioning;
+  
+  return (
+    <EffectComposer>
+      <Bloom
+        luminanceThreshold={0}
+        mipmapBlur
+        luminanceSmoothing={0}
+        intensity={2}
+      />
+      {!isFocused && (
+        <DepthOfField
+          target={[0, 0, 5.5]}
+          focalLength={0.05}
+          bokehScale={2}
+          height={700}
+        />
+      )}
+    </EffectComposer>
+  );
+}
+
 function CameraRig() {
   const {
     focusTarget,
@@ -128,12 +168,19 @@ function CameraRig() {
   const previousPointer = useRef({ x: 0, y: 0 });
 
   useFrame((state, delta) => {
+    const camera = state.camera as THREE.PerspectiveCamera;
+    
     if (focusTarget && !isTransitioning) {
+      // Apply focus camera settings (near/far)
+      camera.near = CAMERA_FOCUS_CONFIG.near;
+      camera.far = CAMERA_FOCUS_CONFIG.far;
+      camera.updateProjectionMatrix();
+      
       // Smoothly move camera to focused screen position
       easing.damp3(
         state.camera.position as Vector3,
         focusTarget.cameraPosition,
-        0.3,
+        CAMERA_TRANSITION_CONFIG.positionDamping,
         delta
       );
 
@@ -144,7 +191,7 @@ function CameraRig() {
       tempCamera.lookAt(lookAtTarget);
 
       // Smoothly interpolate the camera's rotation
-      state.camera.quaternion.slerp(tempCamera.quaternion, delta * 3);
+      state.camera.quaternion.slerp(tempCamera.quaternion, delta * CAMERA_TRANSITION_CONFIG.rotationSpeed);
 
       // Update previous position and pointer for next frame
       previousPosition.current.copy(state.camera.position);
@@ -189,9 +236,27 @@ function CameraRig() {
         delta * slerpSpeed
       );
 
-      // Complete transition after rotation speed has ramped up
+      // Restore original camera settings when transition completes
       if (elapsed > 2000) {
+        camera.near = focusTarget.originalNear;
+        camera.far = focusTarget.originalFar;
+        camera.updateProjectionMatrix();
         completeClearFocus();
+      } else {
+        // Smoothly interpolate near/far during transition
+        const nearProgress = THREE.MathUtils.lerp(
+          CAMERA_FOCUS_CONFIG.near,
+          focusTarget.originalNear,
+          transitionProgress
+        );
+        const farProgress = THREE.MathUtils.lerp(
+          CAMERA_FOCUS_CONFIG.far,
+          focusTarget.originalFar,
+          transitionProgress
+        );
+        camera.near = nearProgress;
+        camera.far = farProgress;
+        camera.updateProjectionMatrix();
       }
 
       previousPointer.current = { x: state.pointer.x, y: state.pointer.y };

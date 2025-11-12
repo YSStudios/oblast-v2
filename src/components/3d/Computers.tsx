@@ -22,10 +22,29 @@ import {
   Billboard,
   Line,
 } from "@react-three/drei";
-import { SpinningBox } from "./SpinningBox";
 import type { GLTF } from "three-stdlib";
+import Hls from "hls.js";
 
 THREE.ColorManagement.enabled = true;
+
+// Camera focus configuration - adjust these values to change how the camera behaves when focusing on screens
+export const CAMERA_FOCUS_CONFIG = {
+  // Distance multiplier: how far back the camera sits from the screen
+  // Higher = farther away (more context visible), Lower = closer (screen fills more of view)
+  distanceMultiplier: 3,
+  
+  // Field of view in degrees (should match the main camera FOV in Scene.tsx)
+  // Higher = wider view, Lower = tighter view
+  fov: 80,
+  
+  // Near clipping plane: how close objects can be before being clipped
+  // Lower = can see objects closer to camera (e.g., 0.1), Higher = objects closer than this are clipped (e.g., 0.5)
+  near: 0.1,
+  
+  // Far clipping plane: how far objects can be before being clipped
+  // Higher = can see objects farther away (e.g., 50), Lower = objects farther than this are clipped (e.g., 20)
+  far: 50,
+} as const;
 
 // Context for managing screen focus state
 interface FocusTarget {
@@ -33,6 +52,8 @@ interface FocusTarget {
   lookAt: [number, number, number];
   originalPosition: [number, number, number];
   originalQuaternion: [number, number, number, number];
+  originalNear: number;
+  originalFar: number;
 }
 
 interface ScreenRegistration {
@@ -824,11 +845,12 @@ export function Computers(props: ComputersProps) {
         rotation={[-Math.PI, 0.56, 0]}
         scale={-1}
       />
-      <ScreenInteractive
+      <ScreenVideo
         frame="Object_206"
         panel="LCDScreen003"
         position={[0.27, 1.53, -2.61]}
-        description="Interactive Screen - Click to rotate the cube"
+        description="Video Screen - Mux video playback"
+        muxPlaybackId="NRXAS23NDPmK6OdqD5GZ6zngNl8aIPXGbeX1ObtkNnM"
       />
       <ScreenText
         frame="Object_209"
@@ -910,6 +932,7 @@ interface ScreenProps {
   rotation?: [number, number, number];
   scale?: number;
   description?: string;
+  resolution?: number;
 }
 
 function Screen({
@@ -917,6 +940,7 @@ function Screen({
   panel,
   children,
   description,
+  resolution = 512,
   ...props
 }: ScreenProps) {
   const { nodes, materials } = useGLTF(
@@ -966,6 +990,8 @@ function Screen({
       camera.quaternion.z,
       camera.quaternion.w,
     ];
+    const originalNear = (camera as THREE.PerspectiveCamera).near;
+    const originalFar = (camera as THREE.PerspectiveCamera).far;
 
     // Update matrices to get accurate world positions
     panelRef.current.updateWorldMatrix(true, false);
@@ -997,9 +1023,8 @@ function Screen({
     const screenHeight = Math.max(size.x, size.y);
 
     // Calculate distance needed to frame the screen nicely
-    // Using FOV of 45 degrees from Scene.tsx
-    const fov = 45 * (Math.PI / 180);
-    const distance = (screenHeight / 2 / Math.tan(fov / 2)) * 2.5; // 2.5 for comfortable viewing distance
+    const fov = CAMERA_FOCUS_CONFIG.fov * (Math.PI / 180);
+    const distance = (screenHeight / 2 / Math.tan(fov / 2)) * CAMERA_FOCUS_CONFIG.distanceMultiplier;
 
     // Position camera directly in front of the screen along its normal
     const cameraPosition = center
@@ -1011,6 +1036,8 @@ function Screen({
       lookAt: [center.x, center.y, center.z],
       originalPosition,
       originalQuaternion,
+      originalNear,
+      originalFar,
     });
     setCurrentScreenId(screenId);
   }, [focusTarget, setFocusTarget, clearFocus, camera, isTransitioning, screenId, currentScreenId, setCurrentScreenId]);
@@ -1164,7 +1191,7 @@ function Screen({
         }}
       >
         <meshBasicMaterial toneMapped={false}>
-          <RenderTexture width={512} height={512} attach="map" anisotropy={16}>
+          <RenderTexture width={resolution} height={resolution} attach="map" anisotropy={16}>
             {children}
           </RenderTexture>
         </meshBasicMaterial>
@@ -1304,29 +1331,198 @@ function ScreenText({
   );
 }
 
-interface ScreenInteractiveProps {
+interface ScreenVideoProps {
   frame: string;
   panel: string;
   position?: [number, number, number];
   rotation?: [number, number, number];
   scale?: number;
   description?: string;
+  muxPlaybackId: string;
 }
 
-function ScreenInteractive({ description, ...props }: ScreenInteractiveProps) {
+function ScreenVideo({ description, muxPlaybackId, ...props }: ScreenVideoProps) {
+  const hlsRef = useRef<Hls | null>(null);
+  const [isVideoReady, setIsVideoReady] = useState(false);
+  const [videoAspect, setVideoAspect] = useState(1); // Default to square
+  const [videoResolution, setVideoResolution] = useState({ width: 1152, height: 864 }); // Default to known video resolution
+  
+  // Create video and texture with useMemo (only on mount or when playbackId changes)
+  const { videoElement, videoTexture } = useMemo(() => {
+    const video = document.createElement('video');
+    video.crossOrigin = 'anonymous';
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.autoplay = true;
+
+    const texture = new THREE.VideoTexture(video);
+    // Use LinearFilter without mipmaps for sharper rendering
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = false; // Disable mipmaps for sharper video
+    texture.format = THREE.RGBAFormat;
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.flipY = true; // Flip vertically to fix upside down video
+    // Ensure texture is centered with no offset
+    texture.offset.set(0, 0);
+    texture.repeat.set(1, 1);
+    texture.center.set(0.5, 0.5);
+    
+    return { videoElement: video, videoTexture: texture };
+  }, []);
+
+  // Calculate plane dimensions based on video aspect ratio
+  const planeDimensions = useMemo(() => {
+    // Use a smaller base size (2) to zoom out and show more of the video
+    // For landscape (aspect > 1): width = 2 * aspect, height = 2
+    // For portrait (aspect < 1): width = 2, height = 2 / aspect
+    const baseSize = 1.1;
+    return videoAspect >= 1 ? [baseSize * videoAspect, baseSize] : [baseSize, baseSize / videoAspect];
+  }, [videoAspect]);
+
+  // Update texture every frame
+  useFrame(() => {
+    if (videoElement.readyState >= videoElement.HAVE_CURRENT_DATA) {
+      // eslint-disable-next-line
+      videoTexture.needsUpdate = true;
+    }
+  });
+
+  // Setup HLS and video loading
+  useEffect(() => {
+    const videoSrc = `https://stream.mux.com/${muxPlaybackId}.m3u8`;
+
+    const handleLoadedMetadata = () => {
+      // Calculate aspect ratio and store resolution when video metadata is loaded
+      if (videoElement.videoWidth && videoElement.videoHeight) {
+        const aspect = videoElement.videoWidth / videoElement.videoHeight;
+        setVideoAspect(aspect);
+        setVideoResolution({
+          width: videoElement.videoWidth,
+          height: videoElement.videoHeight
+        });
+        console.log('Video metadata loaded:', {
+          width: videoElement.videoWidth,
+          height: videoElement.videoHeight,
+          aspect: aspect
+        });
+      }
+    };
+
+    const handleCanPlay = () => {
+      console.log('Video can play');
+      setIsVideoReady(true);
+    };
+
+    const handlePlaying = () => {
+      console.log('Video is playing');
+    };
+
+    const handleError = (e: Event) => {
+      console.error('Video element error:', e);
+    };
+
+    videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
+    videoElement.addEventListener('canplay', handleCanPlay);
+    videoElement.addEventListener('playing', handlePlaying);
+    videoElement.addEventListener('error', handleError);
+
+    // Check if HLS is supported
+    if (Hls.isSupported()) {
+      const hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: false,
+      });
+      
+      hlsRef.current = hls;
+      hls.loadSource(videoSrc);
+      hls.attachMedia(videoElement);
+      
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        console.log('HLS manifest parsed, attempting to play...');
+        videoElement.play().catch((err: Error) => {
+          console.error('Error playing video:', err);
+        });
+      });
+
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        console.error('HLS error:', data);
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              console.error('Fatal network error encountered, trying to recover');
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              console.error('Fatal media error encountered, trying to recover');
+              hls.recoverMediaError();
+              break;
+            default:
+              console.error('Fatal error, cannot recover');
+              hls.destroy();
+              break;
+          }
+        }
+      });
+    } 
+    // Safari has native HLS support
+    else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+      console.log('Using native HLS support');
+      // eslint-disable-next-line
+      videoElement.src = videoSrc;
+      videoElement.play().catch((err: Error) => {
+        console.error('Error playing video:', err);
+      });
+    } else {
+      console.error('HLS is not supported in this browser');
+    }
+
+    return () => {
+      videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      videoElement.removeEventListener('canplay', handleCanPlay);
+      videoElement.removeEventListener('playing', handlePlaying);
+      videoElement.removeEventListener('error', handleError);
+      
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+      videoElement.pause();
+      videoElement.src = '';
+      videoTexture.dispose();
+    };
+  }, [muxPlaybackId, videoElement, videoTexture]);
+
+  // Use a reasonable fixed resolution for RenderTexture (good balance of quality and performance)
+  const renderTextureResolution = 2048;
+
   return (
-    <Screen {...props} description={description}>
+    <Screen {...props} description={description} resolution={renderTextureResolution}>
       <PerspectiveCamera
         makeDefault
         manual
         aspect={1 / 1}
-        position={[0, 0, 10]}
+        position={[2.2, -0.55, 7]}
       />
-      <color attach="background" args={["orange"]} />
-      <ambientLight intensity={Math.PI / 2} />
-      <pointLight decay={0} position={[10, 10, 10]} intensity={Math.PI} />
-      <pointLight decay={0} position={[-10, -10, -10]} />
-      <SpinningBox position={[-3.15, 0.75, 0]} scale={0.5} />
+      <color attach="background" args={["black"]} />
+      <ambientLight intensity={0.5} />
+      <mesh position={[0, 0, 0]}>
+        <planeGeometry args={planeDimensions as [number, number]} />
+        <meshBasicMaterial 
+          map={videoTexture} 
+          toneMapped={false}
+          transparent={false}
+          depthWrite={true}
+          color="#CCCCCC"
+        />
+      </mesh>
+      {!isVideoReady && (
+        <mesh position={[0, 0, 0.1]}>
+          <planeGeometry args={[2, 1]} />
+          <meshBasicMaterial color="white" />
+        </mesh>
+      )}
     </Screen>
   );
 }
