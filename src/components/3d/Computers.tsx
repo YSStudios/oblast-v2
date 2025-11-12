@@ -10,6 +10,7 @@ import {
   FC,
   useState,
   useCallback,
+  useEffect,
 } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
@@ -34,6 +35,11 @@ interface FocusTarget {
   originalQuaternion: [number, number, number, number];
 }
 
+interface ScreenRegistration {
+  id: string;
+  handleClick: () => void;
+}
+
 interface ScreenFocusContextType {
   focusTarget: FocusTarget | null;
   setFocusTarget: (target: FocusTarget) => void;
@@ -43,6 +49,12 @@ interface ScreenFocusContextType {
   transitionStartTime: number | null;
   mouseFollowEnabled: boolean;
   toggleMouseFollow: () => void;
+  registerScreen: (id: string, handleClick: () => void) => void;
+  unregisterScreen: (id: string) => void;
+  currentScreenId: string | null;
+  setCurrentScreenId: (id: string) => void;
+  navigateNext: () => void;
+  navigatePrevious: () => void;
 }
 
 const ScreenFocusContext = createContext<ScreenFocusContextType | null>(null);
@@ -54,6 +66,36 @@ export function ScreenFocusProvider({ children }: { children: ReactNode }) {
     null
   );
   const [mouseFollowEnabled, setMouseFollowEnabled] = useState(true);
+  const [screens, setScreens] = useState<ScreenRegistration[]>([]);
+  const [currentScreenId, setCurrentScreenId] = useState<string | null>(null);
+
+  const registerScreen = useCallback((id: string, handleClick: () => void) => {
+    setScreens((prev) => {
+      // Prevent duplicates
+      if (prev.find((s) => s.id === id)) return prev;
+      return [...prev, { id, handleClick }];
+    });
+  }, []);
+
+  const unregisterScreen = useCallback((id: string) => {
+    setScreens((prev) => prev.filter((s) => s.id !== id));
+  }, []);
+
+  const navigateNext = useCallback(() => {
+    if (!currentScreenId || screens.length === 0) return;
+    const currentIndex = screens.findIndex((s) => s.id === currentScreenId);
+    if (currentIndex === -1) return;
+    const nextIndex = (currentIndex + 1) % screens.length;
+    screens[nextIndex].handleClick();
+  }, [currentScreenId, screens]);
+
+  const navigatePrevious = useCallback(() => {
+    if (!currentScreenId || screens.length === 0) return;
+    const currentIndex = screens.findIndex((s) => s.id === currentScreenId);
+    if (currentIndex === -1) return;
+    const prevIndex = (currentIndex - 1 + screens.length) % screens.length;
+    screens[prevIndex].handleClick();
+  }, [currentScreenId, screens]);
 
   const clearFocus = useCallback(() => {
     setIsTransitioning(true);
@@ -65,12 +107,17 @@ export function ScreenFocusProvider({ children }: { children: ReactNode }) {
     setIsTransitioning(false);
     setTransitionStartTime(null);
     setFocusTarget(target);
+    // Dispatch event for UI
+    window.dispatchEvent(new CustomEvent('screenFocusChange', { detail: { focused: true } }));
   }, []);
 
   const completeClearFocus = useCallback(() => {
     setFocusTarget(null);
     setIsTransitioning(false);
     setTransitionStartTime(null);
+    setCurrentScreenId(null);
+    // Dispatch event for UI
+    window.dispatchEvent(new CustomEvent('screenFocusChange', { detail: { focused: false } }));
   }, []);
 
   const toggleMouseFollow = useCallback(() => {
@@ -88,6 +135,12 @@ export function ScreenFocusProvider({ children }: { children: ReactNode }) {
         transitionStartTime,
         mouseFollowEnabled,
         toggleMouseFollow,
+        registerScreen,
+        unregisterScreen,
+        currentScreenId,
+        setCurrentScreenId,
+        navigateNext,
+        navigatePrevious,
       }}
     >
       {children}
@@ -878,17 +931,25 @@ function Screen({
   const [lineStart, setLineStart] = useState<[number, number, number]>([
     0, 1.2, -0.15,
   ]);
-  const { focusTarget, setFocusTarget, clearFocus, isTransitioning } =
-    useScreenFocus();
+  const {
+    focusTarget,
+    setFocusTarget,
+    clearFocus,
+    isTransitioning,
+    registerScreen,
+    unregisterScreen,
+    currentScreenId,
+    setCurrentScreenId
+  } = useScreenFocus();
   const { camera } = useThree();
+  const screenId = panel; // Use panel name as unique ID
 
   // Calculate optimal camera position for this screen
   const handleScreenClick = useCallback(() => {
     if (!panelRef.current || !groupRef.current) return;
 
-    // If this screen is already focused and NOT transitioning, unfocus it
-    // If transitioning, allow setting new focus (interrupts/cancels the transition)
-    if (focusTarget && !isTransitioning) {
+    // If this screen is already focused, unfocus it
+    if (currentScreenId === screenId && focusTarget && !isTransitioning) {
       clearFocus();
       return;
     }
@@ -951,7 +1012,16 @@ function Screen({
       originalPosition,
       originalQuaternion,
     });
-  }, [focusTarget, setFocusTarget, clearFocus, camera, isTransitioning]);
+    setCurrentScreenId(screenId);
+  }, [focusTarget, setFocusTarget, clearFocus, camera, isTransitioning, screenId, currentScreenId, setCurrentScreenId]);
+
+  // Register this screen on mount, unregister on unmount
+  useEffect(() => {
+    registerScreen(screenId, handleScreenClick);
+    return () => {
+      unregisterScreen(screenId);
+    };
+  }, [screenId, handleScreenClick, registerScreen, unregisterScreen]);
 
   // Generate random character
   const randomChar = () => {

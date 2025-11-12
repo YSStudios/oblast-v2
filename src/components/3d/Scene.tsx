@@ -121,6 +121,8 @@ function CameraRig() {
     transitionStartTime,
     mouseFollowEnabled,
     toggleMouseFollow,
+    navigateNext,
+    navigatePrevious,
   } = useScreenFocus();
   const previousPosition = useRef<THREE.Vector3>(new THREE.Vector3());
   const previousPointer = useRef({ x: 0, y: 0 });
@@ -241,6 +243,17 @@ function CameraRig() {
           !mouseFollowEnabled ? "enabled" : "disabled"
         );
       }
+      // Navigate between screens with arrow keys when focused
+      if (focusTarget && !isTransitioning) {
+        if (e.key === "ArrowRight") {
+          e.preventDefault();
+          navigateNext();
+        }
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          navigatePrevious();
+        }
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -250,6 +263,8 @@ function CameraRig() {
     isTransitioning,
     toggleMouseFollow,
     mouseFollowEnabled,
+    navigateNext,
+    navigatePrevious,
   ]);
 
   return null;
