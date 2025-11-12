@@ -50,7 +50,9 @@ const ScreenFocusContext = createContext<ScreenFocusContextType | null>(null);
 export function ScreenFocusProvider({ children }: { children: ReactNode }) {
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [transitionStartTime, setTransitionStartTime] = useState<number | null>(null);
+  const [transitionStartTime, setTransitionStartTime] = useState<number | null>(
+    null
+  );
   const [mouseFollowEnabled, setMouseFollowEnabled] = useState(true);
 
   const clearFocus = useCallback(() => {
@@ -72,20 +74,22 @@ export function ScreenFocusProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleMouseFollow = useCallback(() => {
-    setMouseFollowEnabled(prev => !prev);
+    setMouseFollowEnabled((prev) => !prev);
   }, []);
 
   return (
-    <ScreenFocusContext.Provider value={{
-      focusTarget,
-      setFocusTarget: handleSetFocus,
-      clearFocus,
-      completeClearFocus,
-      isTransitioning,
-      transitionStartTime,
-      mouseFollowEnabled,
-      toggleMouseFollow
-    }}>
+    <ScreenFocusContext.Provider
+      value={{
+        focusTarget,
+        setFocusTarget: handleSetFocus,
+        clearFocus,
+        completeClearFocus,
+        isTransitioning,
+        transitionStartTime,
+        mouseFollowEnabled,
+        toggleMouseFollow,
+      }}
+    >
       {children}
     </ScreenFocusContext.Provider>
   );
@@ -114,9 +118,7 @@ interface InstancesProps {
 }
 
 export function Instances({ children, ...props }: InstancesProps) {
-  const { nodes } = useGLTF(
-    "/models/computers_2.glb"
-  ) as unknown as GLTFResult;
+  const { nodes } = useGLTF("/models/computers_2.glb") as unknown as GLTFResult;
   const instances = useMemo(
     () => ({
       Object: nodes.Object_4,
@@ -873,8 +875,11 @@ function Screen({
   const groupRef = useRef<THREE.Group>(null);
   const [displayText, setDisplayText] = useState("");
   const animationProgress = useRef(0);
-  const [lineStart, setLineStart] = useState<[number, number, number]>([0, 1.2, -0.15]);
-  const { focusTarget, setFocusTarget, clearFocus, isTransitioning } = useScreenFocus();
+  const [lineStart, setLineStart] = useState<[number, number, number]>([
+    0, 1.2, -0.15,
+  ]);
+  const { focusTarget, setFocusTarget, clearFocus, isTransitioning } =
+    useScreenFocus();
   const { camera } = useThree();
 
   // Calculate optimal camera position for this screen
@@ -892,13 +897,13 @@ function Screen({
     const originalPosition: [number, number, number] = [
       camera.position.x,
       camera.position.y,
-      camera.position.z
+      camera.position.z,
     ];
     const originalQuaternion: [number, number, number, number] = [
       camera.quaternion.x,
       camera.quaternion.y,
       camera.quaternion.z,
-      camera.quaternion.w
+      camera.quaternion.w,
     ];
 
     // Update matrices to get accurate world positions
@@ -914,14 +919,16 @@ function Screen({
     // This represents the direction the screen is facing
     const worldMatrix = panelRef.current.matrixWorld;
     const normalWorld = new THREE.Vector3();
-    
+
     // The Z-axis of the transformation matrix is the forward direction
     // Extract it from the matrix (third column, rows 0-2)
-    normalWorld.set(
-      worldMatrix.elements[8],
-      worldMatrix.elements[9],
-      worldMatrix.elements[10]
-    ).normalize();
+    normalWorld
+      .set(
+        worldMatrix.elements[8],
+        worldMatrix.elements[9],
+        worldMatrix.elements[10]
+      )
+      .normalize();
 
     // Calculate screen dimensions for proper framing
     const size = new THREE.Vector3();
@@ -931,10 +938,12 @@ function Screen({
     // Calculate distance needed to frame the screen nicely
     // Using FOV of 45 degrees from Scene.tsx
     const fov = 45 * (Math.PI / 180);
-    const distance = (screenHeight / 2) / Math.tan(fov / 2) * 2.5; // 2.5 for comfortable viewing distance
+    const distance = (screenHeight / 2 / Math.tan(fov / 2)) * 2.5; // 2.5 for comfortable viewing distance
 
     // Position camera directly in front of the screen along its normal
-    const cameraPosition = center.clone().add(normalWorld.clone().multiplyScalar(distance));
+    const cameraPosition = center
+      .clone()
+      .add(normalWorld.clone().multiplyScalar(distance));
 
     setFocusTarget({
       cameraPosition: [cameraPosition.x, cameraPosition.y, cameraPosition.z],
@@ -958,19 +967,23 @@ function Screen({
       // Update matrices
       panelRef.current.updateWorldMatrix(true, false);
       groupRef.current.updateWorldMatrix(true, false);
-      
+
       // Get bounding box in world space
       const bbox = new THREE.Box3().setFromObject(panelRef.current);
       const center = new THREE.Vector3();
       bbox.getCenter(center);
-      
+
       // Get the top center of the screen in world coordinates
       const worldPos = new THREE.Vector3(center.x, bbox.max.y, center.z);
-      
+
       // Convert world position to local coordinates of the group
       groupRef.current.worldToLocal(worldPos);
-      const newStart: [number, number, number] = [worldPos.x, worldPos.y, worldPos.z];
-      
+      const newStart: [number, number, number] = [
+        worldPos.x,
+        worldPos.y,
+        worldPos.z,
+      ];
+
       // Only update if significantly different to avoid unnecessary rerenders
       if (
         Math.abs(newStart[0] - lineStart[0]) > 0.01 ||
@@ -1069,11 +1082,11 @@ function Screen({
         onPointerOver={(e) => {
           e.stopPropagation();
           setHovered(true);
-          document.body.style.cursor = 'pointer';
+          document.body.style.cursor = "pointer";
         }}
         onPointerOut={() => {
           setHovered(false);
-          document.body.style.cursor = 'auto';
+          document.body.style.cursor = "auto";
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -1109,7 +1122,11 @@ function Screen({
             lockX={false}
             lockY={false}
             lockZ={false}
-            position={[lineStart[0], lineStart[1] + labelYOffset, lineStart[2] + labelZOffset]}
+            position={[
+              lineStart[0],
+              lineStart[1] + labelYOffset,
+              lineStart[2] + labelZOffset,
+            ]}
           >
             {/* Border (pill shape) */}
             <mesh
@@ -1189,7 +1206,7 @@ function ScreenText({
   useFrame((state) => {
     if (textRef.current) {
       textRef.current.position.x =
-        x + Math.sin(rand + state.clock.elapsedTime / 4) * 8;
+        x + Math.sin(rand + state.clock.elapsedTime / 4) * 3.3;
     }
   });
   return (
@@ -1250,9 +1267,7 @@ interface LedsProps {
 
 function Leds({ instances }: LedsProps) {
   const ref = useRef<THREE.Group>(null);
-  const { nodes } = useGLTF(
-    "/models/computers_2.glb"
-  ) as unknown as GLTFResult;
+  const { nodes } = useGLTF("/models/computers_2.glb") as unknown as GLTFResult;
 
   useMemo(() => {
     const sphere = nodes.Sphere as THREE.Mesh;
