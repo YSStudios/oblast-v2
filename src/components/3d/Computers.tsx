@@ -845,13 +845,6 @@ export function Computers(props: ComputersProps) {
         rotation={[-Math.PI, 0.56, 0]}
         scale={-1}
       />
-      <ScreenVideo
-        frame="Object_206"
-        panel="LCDScreen003"
-        position={[0.27, 1.53, -2.61]}
-        description="Video Screen - Mux video playback"
-        muxPlaybackId="NRXAS23NDPmK6OdqD5GZ6zngNl8aIPXGbeX1ObtkNnM"
-      />
       <ScreenText
         frame="Object_209"
         panel="LCDScreen001"
@@ -862,13 +855,22 @@ export function Computers(props: ComputersProps) {
       />
       <ScreenText
         invert
+        frame="Object_206"
+        panel="LCDScreen003"
+        x={-5}
+        y={5}
+        position={[0.27, 1.53, -2.61]}
+        description="Terminal Screen - System output display"
+      />
+      <ScreenText
+        invert
         frame="Object_212"
         panel="LCDScreen"
         x={-5}
         y={5}
         position={[-2.73, 0.63, -0.52]}
         rotation={[0, 1.09, 0]}
-        description="Terminal Screen - System output display"
+        description="Display Monitor - Scrolling text animation"
       />
       <ScreenText
         invert
@@ -878,15 +880,14 @@ export function Computers(props: ComputersProps) {
         rotation={[0, -Math.PI / 9, 0]}
         description="Status Monitor - Real-time data visualization"
       />
-      <ScreenText
-        invert
+      <ScreenVideo
         frame="Object_218"
         panel="LCDScreen004"
-        x={-5}
         position={[3.11, 2.15, -0.18]}
         rotation={[0, -0.79, 0]}
         scale={0.81}
-        description="Debug Console - Code execution trace"
+        description="Video Screen - Mux video playback"
+        muxPlaybackId="NRXAS23NDPmK6OdqD5GZ6zngNl8aIPXGbeX1ObtkNnM"
       />
       <ScreenText
         frame="Object_221"
