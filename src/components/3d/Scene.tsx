@@ -7,6 +7,7 @@ import {
   Bloom,
   DepthOfField,
 } from "@react-three/postprocessing";
+import { DistortionEffect } from "./DistortionEffect";
 import { easing } from "maath";
 import { suspend } from "suspend-react";
 import {
@@ -78,13 +79,20 @@ export default function Scene() {
             luminanceThreshold={0}
             mipmapBlur
             luminanceSmoothing={0.0}
-            intensity={3}
+            intensity={5}
           />
           <DepthOfField
             target={[0, 0, 5.5]}
             focalLength={0.05}
             bokehScale={2}
             height={700}
+          />
+          <DistortionEffect
+            grid={15}
+            mouse={0.3}
+            strength={2.0}
+            relaxation={0.75}
+            distortionStrength={0.001}
           />
         </EffectComposer>
         <CameraRig />
