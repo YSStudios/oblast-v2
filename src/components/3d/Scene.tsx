@@ -64,11 +64,11 @@ export default function Scene() {
               metalness={0.8}
             />
           </mesh>
-          <Bun
+          {/* <Bun
             scale={0.4}
             position={[0, 0.3, 0.5]}
             rotation={[0, -Math.PI * 0.85, 0]}
-          />
+          /> */}
           <pointLight
             distance={1.5}
             intensity={1}

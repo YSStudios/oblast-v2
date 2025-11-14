@@ -879,7 +879,7 @@ export function Computers(props: ComputersProps) {
         frame="Object_206"
         panel="LCDScreen003"
         position={[0.27, 1.53, -2.61]}
-        name="Interactive Screen"
+        name="<< Interactive Screen >>"
         description="3D Visualization System - Click to rotate the animated cube object and explore the interactive 3D space with real-time rendering. Click to rotate the animated cube object and explore the interactive 3D space with real-time rendering."
         descriptionOffset={{
           forward: 0.65,
@@ -894,7 +894,7 @@ export function Computers(props: ComputersProps) {
         y={5}
         position={[-1.43, 2.5, -1.8]}
         rotation={[0, 1, 0]}
-        name="Display Monitor"
+        name="<< Display Monitor >>"
         description="Real-time scrolling text - animation with dynamic content updates. This monitor displays continuously updating information streams."
         descriptionOffset={{
           forward: 0.25,
@@ -911,7 +911,7 @@ export function Computers(props: ComputersProps) {
         y={5}
         position={[-2.73, 0.63, -0.52]}
         rotation={[0, 1.09, 0]}
-        name="Terminal Screen"
+        name="<< Terminal Screen >>"
         description="Advanced system output - display with command execution logging. Track all system processes and command outputs in real-time."
         descriptionOffset={{
           forward: 0.3,
@@ -926,7 +926,7 @@ export function Computers(props: ComputersProps) {
         panel="LCDScreen005"
         position={[1.84, 0.38, -1.77]}
         rotation={[0, -Math.PI / 9, 0]}
-        name="Status Monitor"
+        name="<< Status Monitor >>"
         description="Real-time performance - metrics and data visualization dashboard. Monitor CPU, memory, network usage and system health indicators. metrics and data visualization dashboard. Monitor CPU, memory, network usage and system health indicators."
         descriptionOffset={{
           forward: 0.5,
@@ -944,7 +944,7 @@ export function Computers(props: ComputersProps) {
         position={[3.11, 2.15, -0.18]}
         rotation={[0, -0.79, 0]}
         scale={0.81}
-        name="Debug Console"
+        name="<< Debug Console >>"
         description="Live code execution - trace with detailed error reporting and stack analysis. Debug your applications with comprehensive logging. Debug your applications with comprehensive logging. Debug your applications with comprehensive logging."
         descriptionOffset={{
           forward: 0.05,
@@ -960,7 +960,7 @@ export function Computers(props: ComputersProps) {
         position={[-3.42, 3.06, 1.3]}
         rotation={[0, 1.22, 0]}
         scale={0.9}
-        name="Information Panel"
+        name="<< Information Panel >>"
         description="Network statistics - monitoring with bandwidth usage and connection details. View all active connections and data transfer rates."
         descriptionOffset={{
           forward: 0.1,
@@ -975,7 +975,7 @@ export function Computers(props: ComputersProps) {
         panel="LCDScreen006"
         position={[-3.9, 4.29, -2.64]}
         rotation={[0, 0.54, 0]}
-        name="Control Interface"
+        name="<< Control Interface >>"
         description="System configuration - panel with advanced settings and preferences. Customize your workspace and adjust system parameters. panel with advanced settings and preferences. Customize your workspace and adjust system parameters."
         descriptionOffset={{
           forward: 0.4,
@@ -989,7 +989,7 @@ export function Computers(props: ComputersProps) {
         panel="LCDScreen007"
         position={[0.96, 4.28, -4.2]}
         rotation={[0, -0.65, 0]}
-        name="Graphics Display"
+        name="<< Graphics Display >>"
         description="3D rendering - viewport with shader preview and material editor. Create and test visual effects with real-time feedback. Create and test visual effects with real-time feedback. Create and test visual effects with real-time feedback."
         descriptionOffset={{
           forward: 0.65,
@@ -1003,8 +1003,9 @@ export function Computers(props: ComputersProps) {
         panel="LCDScreen008"
         position={[4.68, 4.29, -1.56]}
         rotation={[0, -Math.PI / 3, 0]}
-        name="Command Terminal"
+        name=" << Command Terminal >>"
         description="Interactive - input and output stream with command history. Execute commands and view results with persistent session history. Execute commands and view results with persistent session history. Execute commands and view results with persistent session history."
+        labelYOffset={0.8}
         descriptionOffset={{
           forward: 0.3,
           up: 0.68,
@@ -1026,6 +1027,7 @@ interface ScreenProps {
   scale?: number;
   name?: string;
   description?: string;
+  labelYOffset?: number;
   descriptionOffset?: {
     forward?: number;
     up?: number;
@@ -1039,6 +1041,7 @@ function Screen({
   children,
   name,
   description,
+  labelYOffset: customLabelYOffset,
   descriptionOffset,
   ...props
 }: ScreenProps) {
@@ -1196,7 +1199,12 @@ function Screen({
     }
 
     // Update line position when hovered - convert world to local coordinates (throttle updates)
-    if (panelRef.current && groupRef.current && hovered && Math.floor(state.clock.elapsedTime * 20) % 2 === 0) {
+    if (
+      panelRef.current &&
+      groupRef.current &&
+      hovered &&
+      Math.floor(state.clock.elapsedTime * 20) % 2 === 0
+    ) {
       // Update matrices
       panelRef.current.updateWorldMatrix(true, false);
       groupRef.current.updateWorldMatrix(true, false);
@@ -1261,51 +1269,9 @@ function Screen({
     }
   });
 
-  // Create rounded rectangle (pill shape) geometry
-  const createPillGeometry = (
-    width: number,
-    height: number,
-    radius: number
-  ) => {
-    const shape = new THREE.Shape();
-    const x = -width / 2;
-    const y = -height / 2;
-
-    shape.moveTo(x + radius, y);
-    shape.lineTo(x + width - radius, y);
-    shape.quadraticCurveTo(x + width, y, x + width, y + radius);
-    shape.lineTo(x + width, y + height - radius);
-    shape.quadraticCurveTo(
-      x + width,
-      y + height,
-      x + width - radius,
-      y + height
-    );
-    shape.lineTo(x + radius, y + height);
-    shape.quadraticCurveTo(x, y + height, x, y + height - radius);
-    shape.lineTo(x, y + radius);
-    shape.quadraticCurveTo(x, y, x + radius, y);
-
-    return new THREE.ShapeGeometry(shape);
-  };
-
-  // Calculate text width based on character count (approximate)
-  const textWidth = name ? name.length * 0.11 : 0;
-  const pillWidth = textWidth + 0.4; // Add padding
-  const pillHeight = 0.5;
-  const borderRadius = pillHeight / 2; // Full pill shape
-  const labelYOffset = 0.6; // Distance above screen (center of billboard)
-  const labelZOffset = 2; // Forward offset to create diagonal line
-  const lineEndY = lineStart[1] + labelYOffset - pillHeight / 2; // Connect to bottom of pill
-
-  const borderGeometry = useMemo(
-    () => createPillGeometry(pillWidth + 0.04, pillHeight + 0.04, borderRadius),
-    [pillWidth, pillHeight, borderRadius]
-  );
-  const backgroundGeometry = useMemo(
-    () => createPillGeometry(pillWidth, pillHeight, borderRadius),
-    [pillWidth, pillHeight, borderRadius]
-  );
+  const labelYOffset = customLabelYOffset ?? 1.2; // Distance above screen (center of billboard)
+  const labelZOffset = 0.4; // Forward offset to create diagonal line (closer to monitor)
+  const lineEndY = lineStart[1] + labelYOffset - 0.2; // Connect line below text
 
   return (
     <group ref={groupRef} {...props}>
@@ -1390,36 +1356,6 @@ function Screen({
               lineStart[2] + labelZOffset,
             ]}
           >
-            {/* Border (pill shape) */}
-            <mesh
-              position={[0, 0, -0.001]}
-              renderOrder={1000}
-              geometry={borderGeometry}
-            >
-              <meshBasicMaterial
-                color="#35c19f"
-                transparent
-                opacity={1}
-                depthTest={false}
-                depthWrite={false}
-              />
-            </mesh>
-
-            {/* Background (pill shape) */}
-            <mesh
-              position={[0, 0, 0]}
-              renderOrder={1001}
-              geometry={backgroundGeometry}
-            >
-              <meshBasicMaterial
-                color="#000000"
-                transparent
-                opacity={0.95}
-                depthTest={false}
-                depthWrite={false}
-              />
-            </mesh>
-
             {/* Text */}
             <Text
               ref={textRef}
@@ -1429,7 +1365,6 @@ function Screen({
               anchorX="center"
               anchorY="middle"
               font="/fonts/Inter-Medium.woff"
-              maxWidth={pillWidth - 0.2}
               depthOffset={-1}
               renderOrder={1002}
               material-depthTest={false}
@@ -1455,6 +1390,7 @@ interface ScreenTextProps {
   scale?: number;
   name?: string;
   description?: string;
+  labelYOffset?: number;
   descriptionOffset?: {
     forward?: number;
     up?: number;
@@ -1468,6 +1404,7 @@ function ScreenText({
   y = 1.2,
   name,
   description,
+  labelYOffset,
   descriptionOffset,
   ...props
 }: ScreenTextProps) {
@@ -1484,6 +1421,7 @@ function ScreenText({
       {...props}
       name={name}
       description={description}
+      labelYOffset={labelYOffset}
       descriptionOffset={descriptionOffset}
     >
       <PerspectiveCamera
@@ -1517,6 +1455,7 @@ interface ScreenInteractiveProps {
   scale?: number;
   name?: string;
   description?: string;
+  labelYOffset?: number;
   descriptionOffset?: {
     forward?: number;
     up?: number;
@@ -1527,6 +1466,7 @@ interface ScreenInteractiveProps {
 function ScreenInteractive({
   name,
   description,
+  labelYOffset,
   descriptionOffset,
   ...props
 }: ScreenInteractiveProps) {
@@ -1535,6 +1475,7 @@ function ScreenInteractive({
       {...props}
       name={name}
       description={description}
+      labelYOffset={labelYOffset}
       descriptionOffset={descriptionOffset}
     >
       <PerspectiveCamera
