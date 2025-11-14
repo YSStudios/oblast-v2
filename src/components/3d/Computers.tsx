@@ -38,6 +38,14 @@ interface FocusTarget {
 interface ScreenRegistration {
   id: string;
   handleClick: () => void;
+  ref: React.RefObject<THREE.Mesh | null> | null;
+  name?: string;
+  description?: string;
+  descriptionOffset?: {
+    forward?: number;
+    up?: number;
+    textY?: number;
+  };
 }
 
 interface ScreenFocusContextType {
@@ -47,14 +55,28 @@ interface ScreenFocusContextType {
   completeClearFocus: () => void;
   isTransitioning: boolean;
   transitionStartTime: number | null;
+  zoomInComplete: boolean;
+  setZoomInComplete: (complete: boolean) => void;
   mouseFollowEnabled: boolean;
   toggleMouseFollow: () => void;
-  registerScreen: (id: string, handleClick: () => void) => void;
+  registerScreen: (
+    id: string,
+    handleClick: () => void,
+    ref: React.RefObject<THREE.Mesh | null> | null,
+    name?: string,
+    description?: string,
+    descriptionOffset?: {
+      forward?: number;
+      up?: number;
+      textY?: number;
+    }
+  ) => void;
   unregisterScreen: (id: string) => void;
   currentScreenId: string | null;
   setCurrentScreenId: (id: string) => void;
   navigateNext: () => void;
   navigatePrevious: () => void;
+  screens: ScreenRegistration[];
 }
 
 const ScreenFocusContext = createContext<ScreenFocusContextType | null>(null);
@@ -65,17 +87,35 @@ export function ScreenFocusProvider({ children }: { children: ReactNode }) {
   const [transitionStartTime, setTransitionStartTime] = useState<number | null>(
     null
   );
+  const [zoomInComplete, setZoomInComplete] = useState(false);
   const [mouseFollowEnabled, setMouseFollowEnabled] = useState(true);
   const [screens, setScreens] = useState<ScreenRegistration[]>([]);
   const [currentScreenId, setCurrentScreenId] = useState<string | null>(null);
 
-  const registerScreen = useCallback((id: string, handleClick: () => void) => {
-    setScreens((prev) => {
-      // Prevent duplicates
-      if (prev.find((s) => s.id === id)) return prev;
-      return [...prev, { id, handleClick }];
-    });
-  }, []);
+  const registerScreen = useCallback(
+    (
+      id: string,
+      handleClick: () => void,
+      ref: React.RefObject<THREE.Mesh | null> | null,
+      name?: string,
+      description?: string,
+      descriptionOffset?: {
+        forward?: number;
+        up?: number;
+        textY?: number;
+      }
+    ) => {
+      setScreens((prev) => {
+        // Prevent duplicates
+        if (prev.find((s) => s.id === id)) return prev;
+        return [
+          ...prev,
+          { id, handleClick, ref, name, description, descriptionOffset },
+        ];
+      });
+    },
+    []
+  );
 
   const unregisterScreen = useCallback((id: string) => {
     setScreens((prev) => prev.filter((s) => s.id !== id));
@@ -100,24 +140,31 @@ export function ScreenFocusProvider({ children }: { children: ReactNode }) {
   const clearFocus = useCallback(() => {
     setIsTransitioning(true);
     setTransitionStartTime(Date.now());
+    setZoomInComplete(false); // Immediately hide text when zoom out starts
     // Don't clear focus target immediately - let the transition complete
   }, []);
 
   const handleSetFocus = useCallback((target: FocusTarget) => {
     setIsTransitioning(false);
     setTransitionStartTime(null);
+    setZoomInComplete(false); // Reset when starting new zoom
     setFocusTarget(target);
     // Dispatch event for UI
-    window.dispatchEvent(new CustomEvent('screenFocusChange', { detail: { focused: true } }));
+    window.dispatchEvent(
+      new CustomEvent("screenFocusChange", { detail: { focused: true } })
+    );
   }, []);
 
   const completeClearFocus = useCallback(() => {
     setFocusTarget(null);
     setIsTransitioning(false);
     setTransitionStartTime(null);
+    setZoomInComplete(false);
     setCurrentScreenId(null);
     // Dispatch event for UI
-    window.dispatchEvent(new CustomEvent('screenFocusChange', { detail: { focused: false } }));
+    window.dispatchEvent(
+      new CustomEvent("screenFocusChange", { detail: { focused: false } })
+    );
   }, []);
 
   const toggleMouseFollow = useCallback(() => {
@@ -133,6 +180,8 @@ export function ScreenFocusProvider({ children }: { children: ReactNode }) {
         completeClearFocus,
         isTransitioning,
         transitionStartTime,
+        zoomInComplete,
+        setZoomInComplete,
         mouseFollowEnabled,
         toggleMouseFollow,
         registerScreen,
@@ -141,6 +190,7 @@ export function ScreenFocusProvider({ children }: { children: ReactNode }) {
         setCurrentScreenId,
         navigateNext,
         navigatePrevious,
+        screens,
       }}
     >
       {children}
@@ -824,20 +874,35 @@ export function Computers(props: ComputersProps) {
         rotation={[-Math.PI, 0.56, 0]}
         scale={-1}
       />
+      {/* Center monitor */}
       <ScreenInteractive
         frame="Object_206"
         panel="LCDScreen003"
         position={[0.27, 1.53, -2.61]}
-        description="Interactive Screen - Click to rotate the cube"
+        name="Interactive Screen"
+        description="3D Visualization System - Click to rotate the animated cube object and explore the interactive 3D space with real-time rendering. Click to rotate the animated cube object and explore the interactive 3D space with real-time rendering."
+        descriptionOffset={{
+          forward: 0.65,
+          up: 0.65,
+          textY: 0.7,
+        }}
       />
+      {/* Center Middle Left Monitor */}
       <ScreenText
         frame="Object_209"
         panel="LCDScreen001"
         y={5}
         position={[-1.43, 2.5, -1.8]}
         rotation={[0, 1, 0]}
-        description="Display Monitor - Scrolling text animation"
+        name="Display Monitor"
+        description="Real-time scrolling text - animation with dynamic content updates. This monitor displays continuously updating information streams."
+        descriptionOffset={{
+          forward: 0.25,
+          up: 0.65,
+          textY: 0.7,
+        }}
       />
+      {/* Bottom Left Monitor */}
       <ScreenText
         invert
         frame="Object_212"
@@ -846,16 +911,31 @@ export function Computers(props: ComputersProps) {
         y={5}
         position={[-2.73, 0.63, -0.52]}
         rotation={[0, 1.09, 0]}
-        description="Terminal Screen - System output display"
+        name="Terminal Screen"
+        description="Advanced system output - display with command execution logging. Track all system processes and command outputs in real-time."
+        descriptionOffset={{
+          forward: 0.3,
+          up: 0.65,
+          textY: 0.7,
+        }}
       />
+      {/*Bottom Right*/}
       <ScreenText
         invert
         frame="Object_215"
         panel="LCDScreen005"
         position={[1.84, 0.38, -1.77]}
         rotation={[0, -Math.PI / 9, 0]}
-        description="Status Monitor - Real-time data visualization"
+        name="Status Monitor"
+        description="Real-time performance - metrics and data visualization dashboard. Monitor CPU, memory, network usage and system health indicators. metrics and data visualization dashboard. Monitor CPU, memory, network usage and system health indicators."
+        descriptionOffset={{
+          forward: 0.5,
+          up: 0.68,
+          textY: 0.7,
+        }}
       />
+
+      {/* Right Middle Monitor */}
       <ScreenText
         invert
         frame="Object_218"
@@ -864,8 +944,15 @@ export function Computers(props: ComputersProps) {
         position={[3.11, 2.15, -0.18]}
         rotation={[0, -0.79, 0]}
         scale={0.81}
-        description="Debug Console - Code execution trace"
+        name="Debug Console"
+        description="Live code execution - trace with detailed error reporting and stack analysis. Debug your applications with comprehensive logging. Debug your applications with comprehensive logging. Debug your applications with comprehensive logging."
+        descriptionOffset={{
+          forward: 0.05,
+          up: 0.68,
+          textY: 0.7,
+        }}
       />
+      {/* Middle Left Monitor */}
       <ScreenText
         frame="Object_221"
         panel="LCDScreen002"
@@ -873,30 +960,58 @@ export function Computers(props: ComputersProps) {
         position={[-3.42, 3.06, 1.3]}
         rotation={[0, 1.22, 0]}
         scale={0.9}
-        description="Information Panel - Network statistics"
+        name="Information Panel"
+        description="Network statistics - monitoring with bandwidth usage and connection details. View all active connections and data transfer rates."
+        descriptionOffset={{
+          forward: 0.1,
+          up: 0.65,
+          textY: 0.7,
+        }}
       />
+      {/* Left Top Monitor */}
       <ScreenText
         invert
         frame="Object_224"
         panel="LCDScreen006"
         position={[-3.9, 4.29, -2.64]}
         rotation={[0, 0.54, 0]}
-        description="Control Interface - System configuration"
+        name="Control Interface"
+        description="System configuration - panel with advanced settings and preferences. Customize your workspace and adjust system parameters. panel with advanced settings and preferences. Customize your workspace and adjust system parameters."
+        descriptionOffset={{
+          forward: 0.4,
+          up: 0.68,
+          textY: 0.7,
+        }}
       />
+      {/* Top Center monitor */}
       <ScreenText
         frame="Object_227"
         panel="LCDScreen007"
         position={[0.96, 4.28, -4.2]}
         rotation={[0, -0.65, 0]}
-        description="Graphics Display - Rendering viewport"
+        name="Graphics Display"
+        description="3D rendering - viewport with shader preview and material editor. Create and test visual effects with real-time feedback. Create and test visual effects with real-time feedback. Create and test visual effects with real-time feedback."
+        descriptionOffset={{
+          forward: 0.65,
+          up: 0.68,
+          textY: 0.7,
+        }}
       />
+      {/* Top Right monitor */}
       <ScreenText
         frame="Object_230"
         panel="LCDScreen008"
         position={[4.68, 4.29, -1.56]}
         rotation={[0, -Math.PI / 3, 0]}
-        description="Command Terminal - Input/Output stream"
+        name="Command Terminal"
+        description="Interactive - input and output stream with command history. Execute commands and view results with persistent session history. Execute commands and view results with persistent session history. Execute commands and view results with persistent session history."
+        descriptionOffset={{
+          forward: 0.3,
+          up: 0.68,
+          textY: 0.7,
+        }}
       />
+
       <Leds instances={instances} />
     </group>
   );
@@ -909,14 +1024,22 @@ interface ScreenProps {
   position?: [number, number, number];
   rotation?: [number, number, number];
   scale?: number;
+  name?: string;
   description?: string;
+  descriptionOffset?: {
+    forward?: number;
+    up?: number;
+    textY?: number;
+  };
 }
 
 function Screen({
   frame,
   panel,
   children,
+  name,
   description,
+  descriptionOffset,
   ...props
 }: ScreenProps) {
   const { nodes, materials } = useGLTF(
@@ -939,7 +1062,7 @@ function Screen({
     registerScreen,
     unregisterScreen,
     currentScreenId,
-    setCurrentScreenId
+    setCurrentScreenId,
   } = useScreenFocus();
   const { camera } = useThree();
   const screenId = panel; // Use panel name as unique ID
@@ -1013,15 +1136,39 @@ function Screen({
       originalQuaternion,
     });
     setCurrentScreenId(screenId);
-  }, [focusTarget, setFocusTarget, clearFocus, camera, isTransitioning, screenId, currentScreenId, setCurrentScreenId]);
+  }, [
+    focusTarget,
+    setFocusTarget,
+    clearFocus,
+    camera,
+    isTransitioning,
+    screenId,
+    currentScreenId,
+    setCurrentScreenId,
+  ]);
 
   // Register this screen on mount, unregister on unmount
   useEffect(() => {
-    registerScreen(screenId, handleScreenClick);
+    registerScreen(
+      screenId,
+      handleScreenClick,
+      panelRef,
+      name,
+      description,
+      descriptionOffset
+    );
     return () => {
       unregisterScreen(screenId);
     };
-  }, [screenId, handleScreenClick, registerScreen, unregisterScreen]);
+  }, [
+    screenId,
+    handleScreenClick,
+    registerScreen,
+    unregisterScreen,
+    name,
+    description,
+    descriptionOffset,
+  ]);
 
   // Generate random character
   const randomChar = () => {
@@ -1065,20 +1212,20 @@ function Screen({
     }
 
     // Animate text reveal
-    if (hovered && description) {
+    if (hovered && name) {
       animationProgress.current += delta * 1.5; // Speed of animation
 
       if (animationProgress.current >= 1) {
-        setDisplayText(description);
+        setDisplayText(name);
       } else {
         const progress = animationProgress.current;
-        const revealedChars = Math.floor(description.length * progress);
+        const revealedChars = Math.floor(name.length * progress);
 
         let newText = "";
-        for (let i = 0; i < description.length; i++) {
+        for (let i = 0; i < name.length; i++) {
           if (i < revealedChars) {
-            newText += description[i];
-          } else if (description[i] === " ") {
+            newText += name[i];
+          } else if (name[i] === " ") {
             newText += " ";
           } else {
             newText += randomChar();
@@ -1121,7 +1268,7 @@ function Screen({
   };
 
   // Calculate text width based on character count (approximate)
-  const textWidth = description ? description.length * 0.11 : 0;
+  const textWidth = name ? name.length * 0.11 : 0;
   const pillWidth = textWidth + 0.4; // Add padding
   const pillHeight = 0.5;
   const borderRadius = pillHeight / 2; // Full pill shape
@@ -1170,7 +1317,7 @@ function Screen({
         </meshBasicMaterial>
       </mesh>
 
-      {hovered && description && !focusTarget && (
+      {hovered && name && !focusTarget && (
         <>
           {/* Line connecting top of LCDScreen to label */}
           <Line
@@ -1262,6 +1409,11 @@ interface ScreenTextProps {
   rotation?: [number, number, number];
   scale?: number;
   description?: string;
+  descriptionOffset?: {
+    forward?: number;
+    up?: number;
+    textY?: number;
+  };
 }
 
 function ScreenText({
@@ -1269,6 +1421,7 @@ function ScreenText({
   x = 0,
   y = 1.2,
   description,
+  descriptionOffset,
   ...props
 }: ScreenTextProps) {
   const textRef = useRef<THREE.Mesh>(null);
@@ -1280,7 +1433,11 @@ function ScreenText({
     }
   });
   return (
-    <Screen {...props} description={description}>
+    <Screen
+      {...props}
+      description={description}
+      descriptionOffset={descriptionOffset}
+    >
       <PerspectiveCamera
         makeDefault
         manual
@@ -1311,11 +1468,24 @@ interface ScreenInteractiveProps {
   rotation?: [number, number, number];
   scale?: number;
   description?: string;
+  descriptionOffset?: {
+    forward?: number;
+    up?: number;
+    textY?: number;
+  };
 }
 
-function ScreenInteractive({ description, ...props }: ScreenInteractiveProps) {
+function ScreenInteractive({
+  description,
+  descriptionOffset,
+  ...props
+}: ScreenInteractiveProps) {
   return (
-    <Screen {...props} description={description}>
+    <Screen
+      {...props}
+      description={description}
+      descriptionOffset={descriptionOffset}
+    >
       <PerspectiveCamera
         makeDefault
         manual

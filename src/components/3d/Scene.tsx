@@ -15,6 +15,7 @@ import {
   ScreenFocusProvider,
   useScreenFocus,
 } from "./Computers";
+import { FloatingDescription } from "./FloatingDescription";
 import type { Vector3, BufferGeometry } from "three";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
@@ -46,6 +47,7 @@ export default function Scene() {
           <Instances>
             <Computers scale={0.5} />
           </Instances>
+          <FloatingDescription />
           <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
             <planeGeometry args={[50, 50]} />
             <MeshReflectorMaterial
@@ -119,6 +121,8 @@ function CameraRig() {
     completeClearFocus,
     isTransitioning,
     transitionStartTime,
+    zoomInComplete,
+    setZoomInComplete,
     mouseFollowEnabled,
     toggleMouseFollow,
     navigateNext,
@@ -145,6 +149,21 @@ function CameraRig() {
 
       // Smoothly interpolate the camera's rotation
       state.camera.quaternion.slerp(tempCamera.quaternion, delta * 3);
+
+      // Check if camera has reached target position (zoom-in complete)
+      if (!zoomInComplete) {
+        const targetPos = new THREE.Vector3(...focusTarget.cameraPosition);
+        const distance = state.camera.position.distanceTo(targetPos);
+        const rotationDiff = Math.abs(
+          state.camera.quaternion.angleTo(tempCamera.quaternion)
+        );
+
+        // Consider zoom complete when position and rotation are close enough
+        // Increased thresholds so text appears sooner during animation
+        if (distance < 0.9 && rotationDiff < 0.9) {
+          setZoomInComplete(true);
+        }
+      }
 
       // Update previous position and pointer for next frame
       previousPosition.current.copy(state.camera.position);
