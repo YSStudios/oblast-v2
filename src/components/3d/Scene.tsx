@@ -17,7 +17,7 @@ import {
 } from "./Computers";
 import { FloatingDescription } from "./FloatingDescription";
 import type { Vector3, BufferGeometry } from "three";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
 const suzi = import("@pmndrs/assets/models/bunny.glb");

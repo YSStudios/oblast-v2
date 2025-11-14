@@ -1054,6 +1054,7 @@ function Screen({
   const [lineStart, setLineStart] = useState<[number, number, number]>([
     0, 1.2, -0.15,
   ]);
+  const [darkenOpacity, setDarkenOpacity] = useState(0);
   const {
     focusTarget,
     setFocusTarget,
@@ -1063,9 +1064,11 @@ function Screen({
     unregisterScreen,
     currentScreenId,
     setCurrentScreenId,
+    zoomInComplete,
   } = useScreenFocus();
   const { camera } = useThree();
   const screenId = panel; // Use panel name as unique ID
+  const isFocused = currentScreenId === screenId; // Check if this screen is focused
 
   // Calculate optimal camera position for this screen
   const handleScreenClick = useCallback(() => {
@@ -1179,6 +1182,13 @@ function Screen({
 
   // Calculate line start position from LCD screen and animate text reveal
   useFrame((state, delta) => {
+    // Update darkening opacity for non-focused screens
+    if (focusTarget && zoomInComplete && !isFocused) {
+      setDarkenOpacity((prev) => Math.min(prev + delta * 2, 0.7));
+    } else {
+      setDarkenOpacity((prev) => Math.max(prev - delta * 3, 0));
+    }
+
     // Update line position when hovered - convert world to local coordinates
     if (panelRef.current && groupRef.current && hovered) {
       // Update matrices
@@ -1316,6 +1326,23 @@ function Screen({
           </RenderTexture>
         </meshBasicMaterial>
       </mesh>
+
+      {/* Darkening overlay for non-focused screens */}
+      {darkenOpacity > 0.01 && (
+        <mesh
+          geometry={(nodes[panel] as THREE.Mesh).geometry}
+          position={[0, 0, 0.001]}
+          renderOrder={1}
+        >
+          <meshBasicMaterial
+            color="#000000"
+            transparent
+            opacity={darkenOpacity}
+            depthTest={true}
+            depthWrite={false}
+          />
+        </mesh>
+      )}
 
       {hovered && name && !focusTarget && (
         <>
