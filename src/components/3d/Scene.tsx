@@ -30,6 +30,7 @@ export default function Scene() {
       camera={{ position: [0, 1, 5.5], fov: 45, near: 1, far: 20 }}
       eventPrefix="client"
       style={{ width: "100%", height: "100vh" }}
+      performance={{ min: 0.5 }}
     >
       <ScreenFocusProvider>
         <color attach="background" args={["black"]} />
@@ -52,7 +53,7 @@ export default function Scene() {
             <planeGeometry args={[50, 50]} />
             <MeshReflectorMaterial
               blur={[100, 10]}
-              resolution={2048}
+              resolution={1024}
               mixBlur={0.5}
               mixStrength={80}
               roughness={1}

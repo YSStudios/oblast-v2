@@ -11,6 +11,7 @@ export function FloatingDescription() {
   const [opacity, setOpacity] = useState(0);
   const [displayText, setDisplayText] = useState("");
   const animationProgress = useRef(0);
+  const lastUpdateTime = useRef(0);
   const { currentScreenId, screens, focusTarget, zoomInComplete } =
     useScreenFocus();
 
@@ -22,16 +23,24 @@ export function FloatingDescription() {
   };
 
   useFrame((state, delta) => {
-    // Smooth fade in/out animation - only show when zoom-in is complete
+    // Smooth fade in/out animation - only show when zoom-in is complete (only update when changing)
     if (currentScreenId && focusTarget && zoomInComplete) {
-      setOpacity((prev) => Math.min(prev + delta * 3, 1));
+      setOpacity((prev) => {
+        const next = Math.min(prev + delta * 3, 1);
+        return Math.abs(next - prev) > 0.01 ? next : prev;
+      });
     } else {
-      setOpacity((prev) => Math.max(prev - delta * 3, 0));
+      setOpacity((prev) => {
+        const next = Math.max(prev - delta * 3, 0);
+        return Math.abs(next - prev) > 0.01 ? next : prev;
+      });
       animationProgress.current = 0; // Reset animation when hiding
     }
 
-    // Update position to follow the focused screen
-    if (groupRef.current && currentScreenId && screens.length > 0) {
+    // Update position to follow the focused screen (throttle to 30fps)
+    const now = state.clock.elapsedTime;
+    if (groupRef.current && currentScreenId && screens.length > 0 && (now - lastUpdateTime.current > 1/30)) {
+      lastUpdateTime.current = now;
       const screenData = screens.find((s) => s.id === currentScreenId);
       if (screenData?.ref?.current) {
         // Update world matrix to get accurate position
@@ -96,25 +105,32 @@ export function FloatingDescription() {
       animationProgress.current += delta * 0.9; // Speed of animation (slower)
 
       if (animationProgress.current >= 1) {
-        setDisplayText(description);
-      } else {
-        const progress = animationProgress.current;
-        const revealedChars = Math.floor(description.length * progress);
-
-        let newText = "";
-        for (let i = 0; i < description.length; i++) {
-          if (i < revealedChars) {
-            newText += description[i];
-          } else if (description[i] === " " || description[i] === "-") {
-            newText += description[i]; // Keep spaces and dashes
-          } else {
-            newText += randomChar();
-          }
+        if (displayText !== description) {
+          setDisplayText(description);
         }
-        setDisplayText(newText);
+      } else {
+        // Only update every other frame for performance
+        if (Math.floor(state.clock.elapsedTime * 30) % 2 === 0) {
+          const progress = animationProgress.current;
+          const revealedChars = Math.floor(description.length * progress);
+
+          let newText = "";
+          for (let i = 0; i < description.length; i++) {
+            if (i < revealedChars) {
+              newText += description[i];
+            } else if (description[i] === " " || description[i] === "-") {
+              newText += description[i]; // Keep spaces and dashes
+            } else {
+              newText += randomChar();
+            }
+          }
+          setDisplayText(newText);
+        }
       }
     } else if (!zoomInComplete) {
-      setDisplayText("");
+      if (displayText !== "") {
+        setDisplayText("");
+      }
     }
   });
 

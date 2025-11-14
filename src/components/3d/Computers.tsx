@@ -1182,15 +1182,21 @@ function Screen({
 
   // Calculate line start position from LCD screen and animate text reveal
   useFrame((state, delta) => {
-    // Update darkening opacity for non-focused screens
+    // Update darkening opacity for non-focused screens (only when changing)
     if (focusTarget && zoomInComplete && !isFocused) {
-      setDarkenOpacity((prev) => Math.min(prev + delta * 2, 0.7));
+      setDarkenOpacity((prev) => {
+        const next = Math.min(prev + delta * 2, 0.7);
+        return Math.abs(next - prev) > 0.01 ? next : prev;
+      });
     } else {
-      setDarkenOpacity((prev) => Math.max(prev - delta * 3, 0));
+      setDarkenOpacity((prev) => {
+        const next = Math.max(prev - delta * 3, 0);
+        return Math.abs(next - prev) > 0.01 ? next : prev;
+      });
     }
 
-    // Update line position when hovered - convert world to local coordinates
-    if (panelRef.current && groupRef.current && hovered) {
+    // Update line position when hovered - convert world to local coordinates (throttle updates)
+    if (panelRef.current && groupRef.current && hovered && Math.floor(state.clock.elapsedTime * 20) % 2 === 0) {
       // Update matrices
       panelRef.current.updateWorldMatrix(true, false);
       groupRef.current.updateWorldMatrix(true, false);
@@ -1221,13 +1227,15 @@ function Screen({
       }
     }
 
-    // Animate text reveal
+    // Animate text reveal (throttle updates for performance)
     if (hovered && name) {
       animationProgress.current += delta * 1.5; // Speed of animation
 
       if (animationProgress.current >= 1) {
-        setDisplayText(name);
-      } else {
+        if (displayText !== name) {
+          setDisplayText(name);
+        }
+      } else if (Math.floor(state.clock.elapsedTime * 30) % 2 === 0) {
         const progress = animationProgress.current;
         const revealedChars = Math.floor(name.length * progress);
 
@@ -1244,8 +1252,12 @@ function Screen({
         setDisplayText(newText);
       }
     } else {
-      animationProgress.current = 0;
-      setDisplayText("");
+      if (animationProgress.current !== 0) {
+        animationProgress.current = 0;
+      }
+      if (displayText !== "") {
+        setDisplayText("");
+      }
     }
   });
 
@@ -1321,7 +1333,13 @@ function Screen({
         }}
       >
         <meshBasicMaterial toneMapped={false}>
-          <RenderTexture width={512} height={512} attach="map" anisotropy={16}>
+          <RenderTexture
+            width={isFocused ? 512 : 256}
+            height={isFocused ? 512 : 256}
+            attach="map"
+            anisotropy={isFocused ? 16 : 8}
+            frames={Infinity}
+          >
             {children}
           </RenderTexture>
         </meshBasicMaterial>
@@ -1353,7 +1371,7 @@ function Screen({
               [lineStart[0], lineEndY, lineStart[2] + labelZOffset],
             ]}
             color="#35c19f"
-            lineWidth={4}
+            lineWidth={2}
             dashed={false}
             renderOrder={998}
             depthTest={false}
@@ -1435,6 +1453,7 @@ interface ScreenTextProps {
   position?: [number, number, number];
   rotation?: [number, number, number];
   scale?: number;
+  name?: string;
   description?: string;
   descriptionOffset?: {
     forward?: number;
@@ -1447,6 +1466,7 @@ function ScreenText({
   invert,
   x = 0,
   y = 1.2,
+  name,
   description,
   descriptionOffset,
   ...props
@@ -1462,6 +1482,7 @@ function ScreenText({
   return (
     <Screen
       {...props}
+      name={name}
       description={description}
       descriptionOffset={descriptionOffset}
     >
@@ -1494,6 +1515,7 @@ interface ScreenInteractiveProps {
   position?: [number, number, number];
   rotation?: [number, number, number];
   scale?: number;
+  name?: string;
   description?: string;
   descriptionOffset?: {
     forward?: number;
@@ -1503,6 +1525,7 @@ interface ScreenInteractiveProps {
 }
 
 function ScreenInteractive({
+  name,
   description,
   descriptionOffset,
   ...props
@@ -1510,6 +1533,7 @@ function ScreenInteractive({
   return (
     <Screen
       {...props}
+      name={name}
       description={description}
       descriptionOffset={descriptionOffset}
     >
