@@ -14,6 +14,7 @@ import {
   Computers,
   ScreenFocusProvider,
   useScreenFocus,
+  CAMERA_FOCUS_CONFIG,
 } from "./Computers";
 import { FloatingDescription } from "./FloatingDescription";
 import type { Vector3, BufferGeometry } from "three";
@@ -142,6 +143,12 @@ function CameraRig() {
         delta
       );
 
+      // Smoothly update camera clipping planes for focused view
+      const perspCamera = state.camera as THREE.PerspectiveCamera;
+      perspCamera.near += (CAMERA_FOCUS_CONFIG.near - perspCamera.near) * delta * 3;
+      perspCamera.far += (CAMERA_FOCUS_CONFIG.far - perspCamera.far) * delta * 3;
+      perspCamera.updateProjectionMatrix();
+
       // Calculate the target rotation (quaternion) to look at the screen
       const lookAtTarget = new THREE.Vector3(...focusTarget.lookAt);
       const tempCamera = new THREE.PerspectiveCamera();
@@ -184,6 +191,12 @@ function CameraRig() {
         1.2, // Match normal mode damping for smooth transition
         delta
       );
+
+      // Smoothly restore original camera clipping planes
+      const perspCamera = state.camera as THREE.PerspectiveCamera;
+      perspCamera.near += (focusTarget.originalNear - perspCamera.near) * delta * 3;
+      perspCamera.far += (focusTarget.originalFar - perspCamera.far) * delta * 3;
+      perspCamera.updateProjectionMatrix();
 
       // Gradually transition from looking at screen to looking at origin
       const elapsed = transitionStartTime
