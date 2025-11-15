@@ -845,79 +845,95 @@ export function Computers(props: ComputersProps) {
         rotation={[-Math.PI, 0.56, 0]}
         scale={-1}
       />
+      {/* LCDScreen (no number) */}
+      <ScreenVideo
+        frame="Object_212"
+        panel="LCDScreen"
+        position={[-2.73, 0.63, -0.52]}
+        rotation={[0, 1.09, 0]}
+        description="Terminal Screen - System output display"
+        muxPlaybackId="NRXAS23NDPmK6OdqD5GZ6zngNl8aIPXGbeX1ObtkNnM"
+      />
+      
+      {/* LCDScreen001 */}
+      <ScreenVideo
+        frame="Object_209"
+        panel="LCDScreen001"
+        position={[-1.43, 2.5, -1.8]}
+        rotation={[0, 1, 0]}
+        description="Display Monitor - Video playback"
+        muxPlaybackId="UchQ5kkYx4IYw4U3Tvqvx5adzlydwWPP61TpajFDl01Y"
+      />
+      
+      {/* LCDScreen002 */}
+      <ScreenVideo
+        frame="Object_221"
+        panel="LCDScreen002"
+        position={[-3.42, 3.06, 1.3]}
+        rotation={[0, 1.22, 0]}
+        scale={0.9}
+        description="Information Panel - Network statistics"
+        muxPlaybackId="UchQ5kkYx4IYw4U3Tvqvx5adzlydwWPP61TpajFDl01Y"
+      />
+      
+      {/* LCDScreen003 */}
       <ScreenVideo
         frame="Object_206"
         panel="LCDScreen003"
         position={[0.27, 1.53, -2.61]}
         description="Video Screen - Mux video playback"
+        muxPlaybackId="V01ic01DGkzDBvjPN4eOw17NPBEeQQRSRVF1SOr1JPPM8"
+      />
+      
+      {/* LCDScreen004 */}
+      <ScreenVideo
+        frame="Object_218"
+        panel="LCDScreen004"
+        position={[3.11, 2.15, -0.18]}
+        rotation={[0, -0.79, 0]}
+        scale={0.81}
+        description="Debug Console - Code execution trace"
         muxPlaybackId="NRXAS23NDPmK6OdqD5GZ6zngNl8aIPXGbeX1ObtkNnM"
       />
-      <ScreenText
-        frame="Object_209"
-        panel="LCDScreen001"
-        y={5}
-        position={[-1.43, 2.5, -1.8]}
-        rotation={[0, 1, 0]}
-        description="Display Monitor - Scrolling text animation"
-      />
-      <ScreenText
-        invert
-        frame="Object_212"
-        panel="LCDScreen"
-        x={-5}
-        y={5}
-        position={[-2.73, 0.63, -0.52]}
-        rotation={[0, 1.09, 0]}
-        description="Terminal Screen - System output display"
-      />
-      <ScreenText
-        invert
+      
+      {/* LCDScreen005 */}
+      <ScreenVideo
         frame="Object_215"
         panel="LCDScreen005"
         position={[1.84, 0.38, -1.77]}
         rotation={[0, -Math.PI / 9, 0]}
         description="Status Monitor - Real-time data visualization"
+        muxPlaybackId="UchQ5kkYx4IYw4U3Tvqvx5adzlydwWPP61TpajFDl01Y"
       />
-      <ScreenText
-        invert
-        frame="Object_218"
-        panel="LCDScreen004"
-        x={-5}
-        position={[3.11, 2.15, -0.18]}
-        rotation={[0, -0.79, 0]}
-        scale={0.81}
-        description="Debug Console - Code execution trace"
-      />
-      <ScreenText
-        frame="Object_221"
-        panel="LCDScreen002"
-        y={5}
-        position={[-3.42, 3.06, 1.3]}
-        rotation={[0, 1.22, 0]}
-        scale={0.9}
-        description="Information Panel - Network statistics"
-      />
-      <ScreenText
-        invert
+      
+      {/* LCDScreen006 */}
+      <ScreenVideo
         frame="Object_224"
         panel="LCDScreen006"
         position={[-3.9, 4.29, -2.64]}
         rotation={[0, 0.54, 0]}
         description="Control Interface - System configuration"
+        muxPlaybackId="NRXAS23NDPmK6OdqD5GZ6zngNl8aIPXGbeX1ObtkNnM"
       />
-      <ScreenText
+      
+      {/* LCDScreen007 */}
+      <ScreenVideo
         frame="Object_227"
         panel="LCDScreen007"
         position={[0.96, 4.28, -4.2]}
         rotation={[0, -0.65, 0]}
         description="Graphics Display - Rendering viewport"
+        muxPlaybackId="V01ic01DGkzDBvjPN4eOw17NPBEeQQRSRVF1SOr1JPPM8"
       />
-      <ScreenText
+      
+      {/* LCDScreen008 */}
+      <ScreenVideo
         frame="Object_230"
         panel="LCDScreen008"
         position={[4.68, 4.29, -1.56]}
         rotation={[0, -Math.PI / 3, 0]}
         description="Command Terminal - Input/Output stream"
+        muxPlaybackId="NRXAS23NDPmK6OdqD5GZ6zngNl8aIPXGbeX1ObtkNnM"
       />
       <Leds instances={instances} />
     </group>
@@ -1092,20 +1108,20 @@ function Screen({
     }
 
     // Animate text reveal
-    if (hovered && description) {
+    if (hovered && panel) {
       animationProgress.current += delta * 1.5; // Speed of animation
 
       if (animationProgress.current >= 1) {
-        setDisplayText(description);
+        setDisplayText(panel);
       } else {
         const progress = animationProgress.current;
-        const revealedChars = Math.floor(description.length * progress);
+        const revealedChars = Math.floor(panel.length * progress);
 
         let newText = "";
-        for (let i = 0; i < description.length; i++) {
+        for (let i = 0; i < panel.length; i++) {
           if (i < revealedChars) {
-            newText += description[i];
-          } else if (description[i] === " ") {
+            newText += panel[i];
+          } else if (panel[i] === " ") {
             newText += " ";
           } else {
             newText += randomChar();
@@ -1148,7 +1164,7 @@ function Screen({
   };
 
   // Calculate text width based on character count (approximate)
-  const textWidth = description ? description.length * 0.11 : 0;
+  const textWidth = panel ? panel.length * 0.11 : 0;
   const pillWidth = textWidth + 0.4; // Add padding
   const pillHeight = 0.5;
   const borderRadius = pillHeight / 2; // Full pill shape
@@ -1197,7 +1213,7 @@ function Screen({
         </meshBasicMaterial>
       </mesh>
 
-      {hovered && description && !focusTarget && (
+      {hovered && panel && !focusTarget && (
         <>
           {/* Line connecting top of LCDScreen to label */}
           <Line
@@ -1342,10 +1358,116 @@ interface ScreenVideoProps {
 }
 
 function ScreenVideo({ description, muxPlaybackId, ...props }: ScreenVideoProps) {
+  const { nodes, materials } = useGLTF(
+    "/models/computers_2.glb"
+  ) as unknown as GLTFResult;
   const hlsRef = useRef<Hls | null>(null);
-  const [isVideoReady, setIsVideoReady] = useState(false);
-  const [videoAspect, setVideoAspect] = useState(1); // Default to square
-  const [videoResolution, setVideoResolution] = useState({ width: 1152, height: 864 }); // Default to known video resolution
+  const [hovered, setHovered] = useState(false);
+  const groupRef = useRef<THREE.Group>(null);
+  const panelRef = useRef<THREE.Mesh>(null);
+  const [videoAspect, setVideoAspect] = useState(16 / 9); // Default aspect ratio
+  
+  // Focus functionality
+  const {
+    focusTarget,
+    setFocusTarget,
+    clearFocus,
+    isTransitioning,
+    registerScreen,
+    unregisterScreen,
+    currentScreenId,
+    setCurrentScreenId
+  } = useScreenFocus();
+  const { camera } = useThree();
+  const screenId = props.panel; // Use panel name as unique ID
+  
+  // Calculate optimal camera position for this screen
+  const handleScreenClick = useCallback(() => {
+    if (!panelRef.current || !groupRef.current) return;
+
+    // If this screen is already focused, unfocus it
+    if (currentScreenId === screenId && focusTarget && !isTransitioning) {
+      clearFocus();
+      return;
+    }
+
+    // Capture current camera state before focusing
+    const originalPosition: [number, number, number] = [
+      camera.position.x,
+      camera.position.y,
+      camera.position.z,
+    ];
+    const originalQuaternion: [number, number, number, number] = [
+      camera.quaternion.x,
+      camera.quaternion.y,
+      camera.quaternion.z,
+      camera.quaternion.w,
+    ];
+    const originalNear = (camera as THREE.PerspectiveCamera).near;
+    const originalFar = (camera as THREE.PerspectiveCamera).far;
+
+    // Update matrices to get accurate world positions
+    panelRef.current.updateWorldMatrix(true, false);
+    groupRef.current.updateWorldMatrix(true, false);
+
+    // Get screen center in world coordinates
+    const bbox = new THREE.Box3().setFromObject(panelRef.current);
+    const center = new THREE.Vector3();
+    bbox.getCenter(center);
+
+    // Extract the screen's Z-axis (forward direction) from its world matrix
+    const worldMatrix = panelRef.current.matrixWorld;
+    const normalWorld = new THREE.Vector3();
+    normalWorld
+      .set(
+        worldMatrix.elements[8],
+        worldMatrix.elements[9],
+        worldMatrix.elements[10]
+      )
+      .normalize();
+
+    // Calculate screen dimensions for proper framing
+    const size = new THREE.Vector3();
+    bbox.getSize(size);
+    const screenHeight = Math.max(size.x, size.y);
+
+    // Calculate distance needed to frame the screen nicely
+    const fov = CAMERA_FOCUS_CONFIG.fov * (Math.PI / 180);
+    const distance = (screenHeight / 2 / Math.tan(fov / 2)) * CAMERA_FOCUS_CONFIG.distanceMultiplier;
+
+    // Position camera in front of the screen
+    const targetPosition = new THREE.Vector3()
+      .copy(center)
+      .add(normalWorld.multiplyScalar(distance));
+
+    // Store focus state
+    setFocusTarget({
+      cameraPosition: [targetPosition.x, targetPosition.y, targetPosition.z],
+      lookAt: [center.x, center.y, center.z],
+      originalPosition,
+      originalQuaternion,
+      originalNear,
+      originalFar,
+    });
+    setCurrentScreenId(screenId);
+  }, [
+    camera,
+    focusTarget,
+    isTransitioning,
+    clearFocus,
+    setFocusTarget,
+    currentScreenId,
+    screenId,
+    setCurrentScreenId,
+  ]);
+
+  // Register this screen on mount
+  useEffect(() => {
+    registerScreen(screenId, handleScreenClick);
+    return () => {
+      unregisterScreen(screenId);
+    };
+  }, [screenId, handleScreenClick, registerScreen, unregisterScreen]);
   
   // Create video and texture with useMemo (only on mount or when playbackId changes)
   const { videoElement, videoTexture } = useMemo(() => {
@@ -1364,22 +1486,12 @@ function ScreenVideo({ description, muxPlaybackId, ...props }: ScreenVideoProps)
     texture.format = THREE.RGBAFormat;
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.flipY = true; // Flip vertically to fix upside down video
-    // Ensure texture is centered with no offset
-    texture.offset.set(0, 0);
-    texture.repeat.set(1, 1);
-    texture.center.set(0.5, 0.5);
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
     
     return { videoElement: video, videoTexture: texture };
   }, []);
 
-  // Calculate plane dimensions based on video aspect ratio
-  const planeDimensions = useMemo(() => {
-    // Use a smaller base size (2) to zoom out and show more of the video
-    // For landscape (aspect > 1): width = 2 * aspect, height = 2
-    // For portrait (aspect < 1): width = 2, height = 2 / aspect
-    const baseSize = 1.1;
-    return videoAspect >= 1 ? [baseSize * videoAspect, baseSize] : [baseSize, baseSize / videoAspect];
-  }, [videoAspect]);
 
   // Update texture every frame
   useFrame(() => {
@@ -1389,34 +1501,60 @@ function ScreenVideo({ description, muxPlaybackId, ...props }: ScreenVideoProps)
     }
   });
 
+  // Fix UV coordinates to ensure proper texture mapping
+  useEffect(() => {
+    if (!panelRef.current) return;
+
+    const geometry = panelRef.current.geometry;
+    const uvAttribute = geometry.attributes.uv;
+    
+    if (uvAttribute) {
+      console.log(`Screen ${props.panel} UV coords before:`, uvAttribute.array.slice(0, 8));
+      
+      // Clone the geometry to avoid modifying the shared GLTF geometry
+      const newGeometry = geometry.clone();
+      const newUvs = newGeometry.attributes.uv;
+      
+      // Find the min/max UV values to understand the current mapping
+      let minU = Infinity, maxU = -Infinity;
+      let minV = Infinity, maxV = -Infinity;
+      
+      for (let i = 0; i < newUvs.count; i++) {
+        const u = newUvs.getX(i);
+        const v = newUvs.getY(i);
+        minU = Math.min(minU, u);
+        maxU = Math.max(maxU, u);
+        minV = Math.min(minV, v);
+        maxV = Math.max(maxV, v);
+      }
+      
+      console.log(`Screen ${props.panel} UV range: U[${minU}, ${maxU}], V[${minV}, ${maxV}]`);
+      
+      // Normalize UVs to 0-1 range
+      for (let i = 0; i < newUvs.count; i++) {
+        const u = newUvs.getX(i);
+        const v = newUvs.getY(i);
+        const normalizedU = (u - minU) / (maxU - minU);
+        const normalizedV = (v - minV) / (maxV - minV);
+        newUvs.setXY(i, normalizedU, normalizedV);
+      }
+      
+      newUvs.needsUpdate = true;
+      panelRef.current.geometry = newGeometry;
+      
+      console.log(`Screen ${props.panel} UV coords after:`, newUvs.array.slice(0, 8));
+    }
+  }, [nodes, props.panel]);
+
   // Setup HLS and video loading
   useEffect(() => {
     const videoSrc = `https://stream.mux.com/${muxPlaybackId}.m3u8`;
 
     const handleLoadedMetadata = () => {
-      // Calculate aspect ratio and store resolution when video metadata is loaded
       if (videoElement.videoWidth && videoElement.videoHeight) {
         const aspect = videoElement.videoWidth / videoElement.videoHeight;
         setVideoAspect(aspect);
-        setVideoResolution({
-          width: videoElement.videoWidth,
-          height: videoElement.videoHeight
-        });
-        console.log('Video metadata loaded:', {
-          width: videoElement.videoWidth,
-          height: videoElement.videoHeight,
-          aspect: aspect
-        });
       }
-    };
-
-    const handleCanPlay = () => {
-      console.log('Video can play');
-      setIsVideoReady(true);
-    };
-
-    const handlePlaying = () => {
-      console.log('Video is playing');
     };
 
     const handleError = (e: Event) => {
@@ -1424,8 +1562,6 @@ function ScreenVideo({ description, muxPlaybackId, ...props }: ScreenVideoProps)
     };
 
     videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
-    videoElement.addEventListener('canplay', handleCanPlay);
-    videoElement.addEventListener('playing', handlePlaying);
     videoElement.addEventListener('error', handleError);
 
     // Check if HLS is supported
@@ -1480,8 +1616,6 @@ function ScreenVideo({ description, muxPlaybackId, ...props }: ScreenVideoProps)
 
     return () => {
       videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      videoElement.removeEventListener('canplay', handleCanPlay);
-      videoElement.removeEventListener('playing', handlePlaying);
       videoElement.removeEventListener('error', handleError);
       
       if (hlsRef.current) {
@@ -1494,36 +1628,73 @@ function ScreenVideo({ description, muxPlaybackId, ...props }: ScreenVideoProps)
     };
   }, [muxPlaybackId, videoElement, videoTexture]);
 
-  // Use a reasonable fixed resolution for RenderTexture (good balance of quality and performance)
-  const renderTextureResolution = 2048;
+  // Calculate texture scaling to fit video within screen (contain mode)
+  useEffect(() => {
+    if (!panelRef.current) return;
+
+    // Get screen mesh bounding box to calculate its aspect ratio
+    const geometry = (nodes[props.panel] as THREE.Mesh).geometry;
+    geometry.computeBoundingBox();
+    const bbox = geometry.boundingBox;
+    
+    if (bbox) {
+      const screenWidth = bbox.max.x - bbox.min.x;
+      const screenHeight = bbox.max.y - bbox.min.y;
+      const screenAspect = screenWidth / screenHeight;
+
+      // Calculate scale to fit video within screen (contain mode)
+      let scaleX = 1;
+      let scaleY = 1;
+
+      if (videoAspect > screenAspect) {
+        // Video is wider than screen - fit to width
+        scaleY = screenAspect / videoAspect;
+      } else {
+        // Video is taller than screen - fit to height
+        scaleX = videoAspect / screenAspect;
+      }
+
+      // Apply scaling and center the texture
+      videoTexture.repeat.set(scaleX, scaleY);
+      videoTexture.offset.set((1 - scaleX) / 2, (1 - scaleY) / 2);
+    }
+  }, [videoAspect, videoTexture, nodes, props.panel]);
 
   return (
-    <Screen {...props} description={description} resolution={renderTextureResolution}>
-      <PerspectiveCamera
-        makeDefault
-        manual
-        aspect={1 / 1}
-        position={[2.2, -0.55, 7]}
+    <group ref={groupRef} {...props}>
+      {/* Frame mesh */}
+      <mesh
+        castShadow
+        receiveShadow
+        geometry={(nodes[props.frame] as THREE.Mesh).geometry}
+        material={materials.Texture}
       />
-      <color attach="background" args={["black"]} />
-      <ambientLight intensity={0.5} />
-      <mesh position={[0, 0, 0]}>
-        <planeGeometry args={planeDimensions as [number, number]} />
+      
+      {/* Panel mesh with video texture */}
+      <mesh
+        ref={panelRef}
+        geometry={(nodes[props.panel] as THREE.Mesh).geometry}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setHovered(true);
+          document.body.style.cursor = "pointer";
+        }}
+        onPointerOut={() => {
+          setHovered(false);
+          document.body.style.cursor = "auto";
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleScreenClick();
+        }}
+      >
         <meshBasicMaterial 
           map={videoTexture} 
           toneMapped={false}
-          transparent={false}
-          depthWrite={true}
-          color="#CCCCCC"
+          color="#808080"
         />
       </mesh>
-      {!isVideoReady && (
-        <mesh position={[0, 0, 0.1]}>
-          <planeGeometry args={[2, 1]} />
-          <meshBasicMaterial color="white" />
-        </mesh>
-      )}
-    </Screen>
+    </group>
   );
 }
 
