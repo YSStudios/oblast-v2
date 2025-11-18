@@ -4,22 +4,20 @@ import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import * as React from "react";
 
+const OblastLoader = dynamic(() => import("@/components/3d/OblastLoaderWithEffect"), {
+  ssr: false,
+  loading: () => (
+    <div style={{ width: "100%", height: "100vh", background: "#010101", display: "flex", alignItems: "center", justifyContent: "center", color: "#f0f0f0" }}>
+      Loading...
+    </div>
+  ),
+});
+
 const Scene = dynamic(() => import("@/components/3d/Scene"), {
   ssr: false,
   loading: () => (
-    <div
-      style={{
-        width: "100%",
-        height: "100vh",
-        background: "black",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#f0f0f0",
-        fontFamily: "Inter, sans-serif",
-      }}
-    >
-      Loading...
+    <div style={{ width: "100%", height: "100vh" }}>
+      <OblastLoader />
     </div>
   ),
 });
