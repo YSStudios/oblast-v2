@@ -1,14 +1,13 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useGLTF, MeshReflectorMaterial, BakeShadows } from "@react-three/drei";
+import { MeshReflectorMaterial, BakeShadows } from "@react-three/drei";
 import {
   EffectComposer,
   Bloom,
   DepthOfField,
 } from "@react-three/postprocessing";
 import { easing } from "maath";
-import { suspend } from "suspend-react";
 import {
   Instances,
   Computers,
@@ -17,22 +16,20 @@ import {
   CAMERA_FOCUS_CONFIG,
 } from "./Computers";
 import { FloatingDescription } from "./FloatingDescription";
-import type { Vector3, BufferGeometry } from "three";
-import { useEffect, useRef, useState } from "react";
+import type { Vector3 } from "three";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
-
-const suzi = import("@pmndrs/assets/models/bunny.glb");
 
 export default function Scene() {
   return (
-    <Canvas
-      shadows
-      dpr={[1, 1.5]}
-      camera={{ position: [0, 1, 5.5], fov: 45, near: 1, far: 20 }}
-      eventPrefix="client"
-      style={{ width: "100%", height: "100vh" }}
-      performance={{ min: 0.5 }}
-    >
+    <div style={{ width: "100%", height: "100vh" }}>
+      <Canvas
+        shadows
+        dpr={[1, 1.5]}
+        camera={{ position: [0, 1, 5.5], fov: 45, near: 1, far: 20 }}
+        eventPrefix="client"
+        performance={{ min: 0.5 }}
+      >
       <ScreenFocusProvider>
         <color attach="background" args={["black"]} />
         <hemisphereLight intensity={0.15} groundColor="black" />
@@ -95,26 +92,28 @@ export default function Scene() {
         <BakeShadows />
       </ScreenFocusProvider>
     </Canvas>
+    </div>
   );
 }
 
-interface BunProps {
-  scale?: number;
-  position?: [number, number, number];
-  rotation?: [number, number, number];
-}
+// Unused component - kept for potential future use
+// interface BunProps {
+//   scale?: number;
+//   position?: [number, number, number];
+//   rotation?: [number, number, number];
+// }
 
-function Bun(props: BunProps) {
-  const model = suspend(suzi) as { default: string };
-  const { nodes } = useGLTF(model.default) as unknown as {
-    nodes: { mesh: { geometry: BufferGeometry } };
-  };
-  return (
-    <mesh receiveShadow castShadow geometry={nodes.mesh.geometry} {...props}>
-      <meshStandardMaterial color="#222" roughness={0.5} />
-    </mesh>
-  );
-}
+// function Bun(props: BunProps) {
+//   const model = suspend(suzi) as { default: string };
+//   const { nodes } = useGLTF(model.default) as unknown as {
+//     nodes: { mesh: { geometry: BufferGeometry } };
+//   };
+//   return (
+//     <mesh receiveShadow castShadow geometry={nodes.mesh.geometry} {...props}>
+//       <meshStandardMaterial color="#222" roughness={0.5} />
+//     </mesh>
+//   );
+// }
 
 function CameraRig() {
   const {

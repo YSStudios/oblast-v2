@@ -6,11 +6,11 @@ import {
   useContext,
   createContext,
   useRef,
-  ReactNode,
-  FC,
   useState,
   useCallback,
   useEffect,
+  type ReactNode,
+  type FC,
 } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
@@ -127,9 +127,9 @@ export function ScreenFocusProvider({ children }: { children: ReactNode }) {
         textY?: number;
       }
     ) => {
-      setScreens((prev) => {
+      setScreens((prev: ScreenRegistration[]) => {
         // Prevent duplicates
-        if (prev.find((s) => s.id === id)) return prev;
+        if (prev.find((s: ScreenRegistration) => s.id === id)) return prev;
         return [
           ...prev,
           { id, handleClick, ref, name, description, descriptionOffset },
@@ -140,12 +140,12 @@ export function ScreenFocusProvider({ children }: { children: ReactNode }) {
   );
 
   const unregisterScreen = useCallback((id: string) => {
-    setScreens((prev) => prev.filter((s) => s.id !== id));
+    setScreens((prev: ScreenRegistration[]) => prev.filter((s: ScreenRegistration) => s.id !== id));
   }, []);
 
   const navigateNext = useCallback(() => {
     if (!currentScreenId || screens.length === 0) return;
-    const currentIndex = screens.findIndex((s) => s.id === currentScreenId);
+    const currentIndex = screens.findIndex((s: ScreenRegistration) => s.id === currentScreenId);
     if (currentIndex === -1) return;
     const nextIndex = (currentIndex + 1) % screens.length;
     screens[nextIndex].handleClick();
@@ -153,7 +153,7 @@ export function ScreenFocusProvider({ children }: { children: ReactNode }) {
 
   const navigatePrevious = useCallback(() => {
     if (!currentScreenId || screens.length === 0) return;
-    const currentIndex = screens.findIndex((s) => s.id === currentScreenId);
+    const currentIndex = screens.findIndex((s: ScreenRegistration) => s.id === currentScreenId);
     if (currentIndex === -1) return;
     const prevIndex = (currentIndex - 1 + screens.length) % screens.length;
     screens[prevIndex].handleClick();
@@ -190,7 +190,7 @@ export function ScreenFocusProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleMouseFollow = useCallback(() => {
-    setMouseFollowEnabled((prev) => !prev);
+    setMouseFollowEnabled((prev: boolean) => !prev);
   }, []);
 
   return (
@@ -263,7 +263,7 @@ export function Instances({ children, ...props }: InstancesProps) {
   );
   return (
     <Merged castShadow receiveShadow meshes={instances} {...props}>
-      {(instances) => (
+      {(instances: InstancesContextType) => (
         <context.Provider value={instances as InstancesContextType}>
           {children}
         </context.Provider>
@@ -1201,12 +1201,12 @@ function Screen({
   useFrame((state, delta) => {
     // Update darkening opacity for non-focused screens (only when changing)
     if (focusTarget && zoomInComplete && !isFocused) {
-      setDarkenOpacity((prev) => {
+      setDarkenOpacity((prev: number) => {
         const next = Math.min(prev + delta * 2, 0.7);
         return Math.abs(next - prev) > 0.01 ? next : prev;
       });
     } else {
-      setDarkenOpacity((prev) => {
+      setDarkenOpacity((prev: number) => {
         const next = Math.max(prev - delta * 3, 0);
         return Math.abs(next - prev) > 0.01 ? next : prev;
       });
@@ -2015,7 +2015,7 @@ function Leds({ instances }: LedsProps) {
 
   useFrame((state) => {
     if (ref.current) {
-      ref.current.children.forEach((instance) => {
+      ref.current.children.forEach((instance: THREE.Object3D) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const instanceWithColor = instance as any;
         if (instanceWithColor.color) {
