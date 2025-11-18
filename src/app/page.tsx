@@ -1,35 +1,67 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import * as React from "react";
 
-const OblastLoader = dynamic(() => import("@/components/3d/OblastLoaderWithEffect"), {
+const OblastLoaderLED = dynamic(() => import("@/components/3d/OblastLoaderLED"), {
   ssr: false,
-  loading: () => (
-    <div style={{ width: "100%", height: "100vh", background: "#010101", display: "flex", alignItems: "center", justifyContent: "center", color: "#f0f0f0" }}>
-      Loading...
-    </div>
-  ),
 });
 
 const Scene = dynamic(() => import("@/components/3d/Scene"), {
   ssr: false,
-  loading: () => (
-    <div style={{ width: "100%", height: "100vh" }}>
-      <OblastLoader />
-    </div>
-  ),
 });
 
 export default function Home() {
+  const [showLoader, setShowLoader] = useState(true);
+  const [fadeOut, setFadeOut] = useState(false);
+  const [fadeIn, setFadeIn] = useState(false);
+
+  useEffect(() => {
+    // Start fade out animation at 9.5 seconds
+    const fadeOutTimer = setTimeout(() => {
+      setFadeOut(true);
+    }, 9500);
+
+    // Remove loader at 10 seconds (after fade out completes)
+    const removeTimer = setTimeout(() => {
+      setShowLoader(false);
+      setFadeIn(true);
+    }, 10000);
+
+    return () => {
+      clearTimeout(fadeOutTimer);
+      clearTimeout(removeTimer);
+    };
+  }, []);
+
+  if (showLoader) {
+    return (
+      <div
+        style={{
+          width: "100vw",
+          height: "100vh",
+          opacity: fadeOut ? 0 : 1,
+          transition: "opacity 0.5s ease-in-out",
+        }}
+      >
+        <OblastLoaderLED />
+      </div>
+    );
+  }
+
   return (
-    <>
+    <div
+      style={{
+        opacity: fadeIn ? 1 : 0,
+        transition: "opacity 0.5s ease-in-out",
+      }}
+    >
       <Suspense fallback={null}>
         <Scene />
       </Suspense>
       <Overlay />
-    </>
+    </div>
   );
 }
 

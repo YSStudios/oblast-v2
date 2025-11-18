@@ -1,18 +1,80 @@
-'use client';
+"use client";
 
-import { OrthographicCamera, Center, Text3D } from '@react-three/drei';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Leva, useControls } from 'leva';
-import { Suspense, useRef, useEffect, useMemo } from 'react';
-import * as THREE from 'three';
-import { ledFragmentShader } from './ledShader';
+import {
+  OrthographicCamera,
+  Center,
+  Text3D,
+  Environment,
+} from "@react-three/drei";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Leva, useControls } from "leva";
+import { Suspense, useRef, useEffect, useMemo } from "react";
+import * as THREE from "three";
+import { ledFragmentShader } from "./ledShader";
+
+const BackgroundGrid = () => {
+  const groupRef = useRef<THREE.Group>(null);
+
+  useFrame((state, delta) => {
+    if (groupRef.current) {
+      // Only rotate horizontally to keep spheres behind the text
+      groupRef.current.rotation.y += delta * 0.3;
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={[0, 0, -3]}>
+      {/* Cyan background spheres - kept at Z=-3 to stay behind text */}
+      <mesh position={[-2, 1, 0]}>
+        <sphereGeometry args={[0.5, 32, 32]} />
+        <meshStandardMaterial
+          color="#88ccdd"
+          emissive="#88ccdd"
+          emissiveIntensity={1.0}
+        />
+      </mesh>
+      <mesh position={[2, -1, 0]}>
+        <sphereGeometry args={[0.5, 32, 32]} />
+        <meshStandardMaterial
+          color="#88ccdd"
+          emissive="#88ccdd"
+          emissiveIntensity={1.0}
+        />
+      </mesh>
+      <mesh position={[1, -1.5, 0]}>
+        <sphereGeometry args={[0.3, 32, 32]} />
+        <meshStandardMaterial
+          color="#88ccdd"
+          emissive="#88ccdd"
+          emissiveIntensity={1.0}
+        />
+      </mesh>
+      <mesh position={[-1.5, -0.5, 0]}>
+        <sphereGeometry args={[0.4, 32, 32]} />
+        <meshStandardMaterial
+          color="#88ccdd"
+          emissive="#88ccdd"
+          emissiveIntensity={1.0}
+        />
+      </mesh>
+      <mesh position={[1.5, 1.5, 0]}>
+        <sphereGeometry args={[0.35, 32, 32]} />
+        <meshStandardMaterial
+          color="#88ccdd"
+          emissive="#88ccdd"
+          emissiveIntensity={1.0}
+        />
+      </mesh>
+    </group>
+  );
+};
 
 const OblastText = () => {
   const textRef = useRef<THREE.Group>(null);
 
   useFrame((state, delta) => {
     if (textRef.current) {
-      textRef.current.rotation.y += delta * 0.5;
+      textRef.current.rotation.y += delta * 0.8;
     }
   });
 
@@ -31,12 +93,19 @@ const OblastText = () => {
           bevelSegments={5}
         >
           Oblast Studio
-          <meshStandardMaterial
-            color="#1a3a44"
+          <meshPhysicalMaterial
+            color="#ffffff"
             emissive="#66b3cc"
-            emissiveIntensity={1.2}
-            metalness={0.2}
-            roughness={0.7}
+            emissiveIntensity={0.8}
+            metalness={0}
+            roughness={0}
+            transmission={1}
+            thickness={2.0}
+            ior={2.5}
+            reflectivity={0.5}
+            clearcoat={1}
+            clearcoatRoughness={0}
+            envMapIntensity={1.5}
             toneMapped={false}
           />
         </Text3D>
@@ -45,32 +114,47 @@ const OblastText = () => {
   );
 };
 
-const LEDEffectPass = ({ pixelSize, maskStagger, bloomIntensity }: { pixelSize: number; maskStagger: number; bloomIntensity: number }) => {
+const LEDEffectPass = ({
+  pixelSize,
+  maskStagger,
+  bloomIntensity,
+}: {
+  pixelSize: number;
+  maskStagger: number;
+  bloomIntensity: number;
+}) => {
   const { gl, scene, camera, size } = useThree();
   const composerRef = useRef<any>(null);
   const effectRef = useRef<any>(null);
   const bloomRef = useRef<any>(null);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
-    const { EffectComposer, RenderPass, EffectPass, Effect, BloomEffect, KernelSize } = require('postprocessing');
+    const {
+      EffectComposer,
+      RenderPass,
+      EffectPass,
+      Effect,
+      BloomEffect,
+      KernelSize,
+    } = require("postprocessing");
 
     class CustomLEDEffectImpl extends Effect {
-      constructor({ pixelSize = 8.0, maskStagger = 0.5 }) {
+      constructor({ pixelSize = 4.0, maskStagger = 0.5 }) {
         const uniforms = new Map([
-          ['pixelSize', new THREE.Uniform(pixelSize)],
-          ['maskStagger', new THREE.Uniform(maskStagger)],
+          ["pixelSize", new THREE.Uniform(pixelSize)],
+          ["maskStagger", new THREE.Uniform(maskStagger)],
         ]);
 
-        super('CustomLEDEffect', ledFragmentShader, { uniforms });
+        super("CustomLEDEffect", ledFragmentShader, { uniforms });
         this.pixelSize = pixelSize;
         this.maskStagger = maskStagger;
       }
 
       update() {
-        this.uniforms.get('pixelSize').value = this.pixelSize;
-        this.uniforms.get('maskStagger').value = this.maskStagger;
+        this.uniforms.get("pixelSize").value = this.pixelSize;
+        this.uniforms.get("maskStagger").value = this.maskStagger;
       }
     }
 
@@ -130,19 +214,19 @@ const LEDEffectPass = ({ pixelSize, maskStagger, bloomIntensity }: { pixelSize: 
 const Scene = () => {
   const { pixelSize, maskStagger, bloomIntensity, bloomRadius } = useControls({
     pixelSize: {
-      value: 8.0,
+      value: 4.0,
       min: 4.0,
       max: 32.0,
       step: 1.0,
     },
     maskStagger: {
-      value: 0.5,
+      value: 0.1,
       min: 0.0,
       max: 1.0,
       step: 0.01,
     },
     bloomIntensity: {
-      value: 3.0,
+      value: 1.5,
       min: 0.0,
       max: 10.0,
       step: 0.1,
@@ -151,11 +235,19 @@ const Scene = () => {
 
   return (
     <>
-      <color attach="background" args={['#010101']} />
+      <color attach="background" args={["#010101"]} />
       <ambientLight intensity={0.5} />
       <directionalLight position={[5, 10, -5]} intensity={10.0} />
+      <pointLight position={[-5, 5, -5]} intensity={2.0} color="#88ccff" />
+      <pointLight position={[5, -5, -5]} intensity={2.0} color="#ff88cc" />
+      <Environment preset="city" background={false} />
+      <BackgroundGrid />
       <OblastText />
-      <LEDEffectPass pixelSize={pixelSize} maskStagger={maskStagger} bloomIntensity={bloomIntensity} />
+      <LEDEffectPass
+        pixelSize={pixelSize}
+        maskStagger={maskStagger}
+        bloomIntensity={bloomIntensity}
+      />
     </>
   );
 };
@@ -167,7 +259,7 @@ interface OblastLoaderLEDProps {
 const OblastLoaderLED = ({ className }: OblastLoaderLEDProps) => {
   return (
     <>
-      <div className={className} style={{ width: '100%', height: '100%' }}>
+      <div className={className} style={{ width: "100%", height: "100%" }}>
         <Canvas
           shadows
           dpr={[1, 1.5]}
