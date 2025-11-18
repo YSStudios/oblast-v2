@@ -24,7 +24,7 @@ import {
 } from "@react-three/drei";
 import { SpinningBox } from "./SpinningBox";
 import type { GLTF } from "three-stdlib";
-import Hls from "hls.js";
+import Hls, { type ErrorData } from "hls.js";
 
 THREE.ColorManagement.enabled = true;
 
@@ -33,15 +33,15 @@ export const CAMERA_FOCUS_CONFIG = {
   // Distance multiplier: how far back the camera sits from the screen
   // Higher = farther away (more context visible), Lower = closer (screen fills more of view)
   distanceMultiplier: 3,
-  
+
   // Field of view in degrees (should match the main camera FOV in Scene.tsx)
   // Higher = wider view, Lower = tighter view
   fov: 60,
-  
+
   // Near clipping plane: how close objects can be before being clipped
   // Lower = can see objects closer to camera (e.g., 0.1), Higher = objects closer than this are clipped (e.g., 0.5)
   near: 0.1,
-  
+
   // Far clipping plane: how far objects can be before being clipped
   // Higher = can see objects farther away (e.g., 50), Lower = objects farther than this are clipped (e.g., 20)
   far: 50,
@@ -140,12 +140,16 @@ export function ScreenFocusProvider({ children }: { children: ReactNode }) {
   );
 
   const unregisterScreen = useCallback((id: string) => {
-    setScreens((prev: ScreenRegistration[]) => prev.filter((s: ScreenRegistration) => s.id !== id));
+    setScreens((prev: ScreenRegistration[]) =>
+      prev.filter((s: ScreenRegistration) => s.id !== id)
+    );
   }, []);
 
   const navigateNext = useCallback(() => {
     if (!currentScreenId || screens.length === 0) return;
-    const currentIndex = screens.findIndex((s: ScreenRegistration) => s.id === currentScreenId);
+    const currentIndex = screens.findIndex(
+      (s: ScreenRegistration) => s.id === currentScreenId
+    );
     if (currentIndex === -1) return;
     const nextIndex = (currentIndex + 1) % screens.length;
     screens[nextIndex].handleClick();
@@ -153,7 +157,9 @@ export function ScreenFocusProvider({ children }: { children: ReactNode }) {
 
   const navigatePrevious = useCallback(() => {
     if (!currentScreenId || screens.length === 0) return;
-    const currentIndex = screens.findIndex((s: ScreenRegistration) => s.id === currentScreenId);
+    const currentIndex = screens.findIndex(
+      (s: ScreenRegistration) => s.id === currentScreenId
+    );
     if (currentIndex === -1) return;
     const prevIndex = (currentIndex - 1 + screens.length) % screens.length;
     screens[prevIndex].handleClick();
@@ -906,7 +912,7 @@ export function Computers(props: ComputersProps) {
         description="Terminal Screen - System output display"
         muxPlaybackId="NRXAS23NDPmK6OdqD5GZ6zngNl8aIPXGbeX1ObtkNnM"
       />
-      
+
       {/* LCDScreen001 - Video 2 */}
       <ScreenVideo
         frame="Object_209"
@@ -917,7 +923,7 @@ export function Computers(props: ComputersProps) {
         description="Display Monitor - Video playback"
         muxPlaybackId="UchQ5kkYx4IYw4U3Tvqvx5adzlydwWPP61TpajFDl01Y"
       />
-      
+
       {/* LCDScreen002 */}
       <ScreenText
         frame="Object_221"
@@ -934,7 +940,7 @@ export function Computers(props: ComputersProps) {
           textY: 0.7,
         }}
       />
-      
+
       {/* LCDScreen003 - Interactive Spinning Cube */}
       <ScreenInteractive
         frame="Object_206"
@@ -948,7 +954,7 @@ export function Computers(props: ComputersProps) {
           textY: 0.7,
         }}
       />
-      
+
       {/* LCDScreen004 - Video 3 */}
       <ScreenVideo
         frame="Object_218"
@@ -957,10 +963,15 @@ export function Computers(props: ComputersProps) {
         rotation={[0, -0.79, 0]}
         scale={0.81}
         name="<< Video Display >>"
-        description="Debug Console - Video display"
+        description="Debug Console - screen module debug website link >>>>>"
         muxPlaybackId="V01ic01DGkzDBvjPN4eOw17NPBEeQQRSRVF1SOr1JPPM8"
+        descriptionOffset={{
+          forward: 0.3,
+          up: 0.51,
+          textY: 0.7,
+        }}
       />
-      
+
       {/* LCDScreen005 */}
       <ScreenText
         invert
@@ -972,11 +983,11 @@ export function Computers(props: ComputersProps) {
         description="Real-time performance - metrics and data visualization dashboard. Monitor CPU, memory, network usage and system health indicators."
         descriptionOffset={{
           forward: 0.5,
-          up: 0.68,
+          up: 0.58,
           textY: 0.7,
         }}
       />
-      
+
       {/* LCDScreen006 */}
       <ScreenText
         invert
@@ -988,11 +999,11 @@ export function Computers(props: ComputersProps) {
         description="System configuration - panel with advanced settings and preferences. Customize your workspace and adjust system parameters."
         descriptionOffset={{
           forward: 0.4,
-          up: 0.68,
+          up: 0.58,
           textY: 0.7,
         }}
       />
-      
+
       {/* LCDScreen007 */}
       <ScreenText
         frame="Object_227"
@@ -1003,11 +1014,11 @@ export function Computers(props: ComputersProps) {
         description="3D rendering - viewport with shader preview and material editor. Create and test visual effects with real-time feedback."
         descriptionOffset={{
           forward: 0.65,
-          up: 0.68,
+          up: 0.58,
           textY: 0.7,
         }}
       />
-      
+
       {/* LCDScreen008 */}
       <ScreenText
         frame="Object_230"
@@ -1140,7 +1151,9 @@ function Screen({
 
     // Calculate distance needed to frame the screen nicely
     const fov = CAMERA_FOCUS_CONFIG.fov * (Math.PI / 180);
-    const distance = (screenHeight / 2 / Math.tan(fov / 2)) * CAMERA_FOCUS_CONFIG.distanceMultiplier;
+    const distance =
+      (screenHeight / 2 / Math.tan(fov / 2)) *
+      CAMERA_FOCUS_CONFIG.distanceMultiplier;
 
     // Position camera directly in front of the screen along its normal
     const cameraPosition = center
@@ -1516,10 +1529,22 @@ interface ScreenVideoProps {
   name?: string;
   description?: string;
   labelYOffset?: number;
+  descriptionOffset?: {
+    forward?: number;
+    up?: number;
+    textY?: number;
+  };
   muxPlaybackId: string;
 }
 
-function ScreenVideo({ description, muxPlaybackId, name, labelYOffset: customLabelYOffset, ...props }: ScreenVideoProps) {
+function ScreenVideo({
+  description,
+  muxPlaybackId,
+  name,
+  labelYOffset: customLabelYOffset,
+  descriptionOffset,
+  ...props
+}: ScreenVideoProps) {
   const { nodes, materials } = useGLTF(
     "/models/computers_2.glb"
   ) as unknown as GLTFResult;
@@ -1534,7 +1559,7 @@ function ScreenVideo({ description, muxPlaybackId, name, labelYOffset: customLab
   const [lineStart, setLineStart] = useState<[number, number, number]>([
     0, 1.2, -0.15,
   ]);
-  
+
   // Focus functionality
   const {
     focusTarget,
@@ -1544,11 +1569,11 @@ function ScreenVideo({ description, muxPlaybackId, name, labelYOffset: customLab
     registerScreen,
     unregisterScreen,
     currentScreenId,
-    setCurrentScreenId
+    setCurrentScreenId,
   } = useScreenFocus();
   const { camera } = useThree();
   const screenId = props.panel; // Use panel name as unique ID
-  
+
   // Calculate optimal camera position for this screen
   const handleScreenClick = useCallback(() => {
     if (!panelRef.current || !groupRef.current) return;
@@ -1601,7 +1626,9 @@ function ScreenVideo({ description, muxPlaybackId, name, labelYOffset: customLab
 
     // Calculate distance needed to frame the screen nicely
     const fov = CAMERA_FOCUS_CONFIG.fov * (Math.PI / 180);
-    const distance = (screenHeight / 2 / Math.tan(fov / 2)) * CAMERA_FOCUS_CONFIG.distanceMultiplier;
+    const distance =
+      (screenHeight / 2 / Math.tan(fov / 2)) *
+      CAMERA_FOCUS_CONFIG.distanceMultiplier;
 
     // Position camera in front of the screen
     const targetPosition = new THREE.Vector3()
@@ -1631,16 +1658,31 @@ function ScreenVideo({ description, muxPlaybackId, name, labelYOffset: customLab
 
   // Register this screen on mount
   useEffect(() => {
-    registerScreen(screenId, handleScreenClick, panelRef, undefined, description);
+    registerScreen(
+      screenId,
+      handleScreenClick,
+      panelRef,
+      name,
+      description,
+      descriptionOffset
+    );
     return () => {
       unregisterScreen(screenId);
     };
-  }, [screenId, handleScreenClick, registerScreen, unregisterScreen, description]);
-  
+  }, [
+    screenId,
+    handleScreenClick,
+    registerScreen,
+    unregisterScreen,
+    name,
+    description,
+    descriptionOffset,
+  ]);
+
   // Create video and texture with useMemo (only on mount or when playbackId changes)
   const { videoElement, videoTexture } = useMemo(() => {
-    const video = document.createElement('video');
-    video.crossOrigin = 'anonymous';
+    const video = document.createElement("video");
+    video.crossOrigin = "anonymous";
     video.loop = true;
     video.muted = true;
     video.playsInline = true;
@@ -1656,10 +1698,9 @@ function ScreenVideo({ description, muxPlaybackId, name, labelYOffset: customLab
     texture.flipY = true; // Flip vertically to fix upside down video
     texture.wrapS = THREE.ClampToEdgeWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
-    
+
     return { videoElement: video, videoTexture: texture };
   }, []);
-
 
   // Generate random character
   const randomChar = () => {
@@ -1752,18 +1793,23 @@ function ScreenVideo({ description, muxPlaybackId, name, labelYOffset: customLab
 
     const geometry = panelRef.current.geometry;
     const uvAttribute = geometry.attributes.uv;
-    
+
     if (uvAttribute) {
-      console.log(`Screen ${props.panel} UV coords before:`, uvAttribute.array.slice(0, 8));
-      
+      console.log(
+        `Screen ${props.panel} UV coords before:`,
+        uvAttribute.array.slice(0, 8)
+      );
+
       // Clone the geometry to avoid modifying the shared GLTF geometry
       const newGeometry = geometry.clone();
       const newUvs = newGeometry.attributes.uv;
-      
+
       // Find the min/max UV values to understand the current mapping
-      let minU = Infinity, maxU = -Infinity;
-      let minV = Infinity, maxV = -Infinity;
-      
+      let minU = Infinity,
+        maxU = -Infinity;
+      let minV = Infinity,
+        maxV = -Infinity;
+
       for (let i = 0; i < newUvs.count; i++) {
         const u = newUvs.getX(i);
         const v = newUvs.getY(i);
@@ -1772,9 +1818,11 @@ function ScreenVideo({ description, muxPlaybackId, name, labelYOffset: customLab
         minV = Math.min(minV, v);
         maxV = Math.max(maxV, v);
       }
-      
-      console.log(`Screen ${props.panel} UV range: U[${minU}, ${maxU}], V[${minV}, ${maxV}]`);
-      
+
+      console.log(
+        `Screen ${props.panel} UV range: U[${minU}, ${maxU}], V[${minV}, ${maxV}]`
+      );
+
       // Normalize UVs to 0-1 range
       for (let i = 0; i < newUvs.count; i++) {
         const u = newUvs.getX(i);
@@ -1783,11 +1831,14 @@ function ScreenVideo({ description, muxPlaybackId, name, labelYOffset: customLab
         const normalizedV = (v - minV) / (maxV - minV);
         newUvs.setXY(i, normalizedU, normalizedV);
       }
-      
+
       newUvs.needsUpdate = true;
       panelRef.current.geometry = newGeometry;
-      
-      console.log(`Screen ${props.panel} UV coords after:`, newUvs.array.slice(0, 8));
+
+      console.log(
+        `Screen ${props.panel} UV coords after:`,
+        newUvs.array.slice(0, 8)
+      );
     }
   }, [nodes, props.panel]);
 
@@ -1803,11 +1854,11 @@ function ScreenVideo({ description, muxPlaybackId, name, labelYOffset: customLab
     };
 
     const handleError = (e: Event) => {
-      console.error('Video element error:', e);
+      console.error("Video element error:", e);
     };
 
-    videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
-    videoElement.addEventListener('error', handleError);
+    videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
+    videoElement.addEventListener("error", handleError);
 
     // Check if HLS is supported
     if (Hls.isSupported()) {
@@ -1815,60 +1866,78 @@ function ScreenVideo({ description, muxPlaybackId, name, labelYOffset: customLab
         enableWorker: true,
         lowLatencyMode: false,
       });
-      
+
       hlsRef.current = hls;
       hls.loadSource(videoSrc);
       hls.attachMedia(videoElement);
-      
+
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        console.log('HLS manifest parsed, attempting to play...');
+        console.log("HLS manifest parsed, attempting to play...");
         videoElement.play().catch((err: Error) => {
-          console.error('Error playing video:', err);
+          console.error("Error playing video:", err);
         });
       });
 
-      hls.on(Hls.Events.ERROR, (event, data) => {
-        console.error('HLS error:', data);
+      hls.on(Hls.Events.ERROR, (_event: string, data: ErrorData) => {
+        // Only log if we have actual error data (suppress empty error objects)
+        const hasErrorData =
+          data.type !== undefined ||
+          data.details !== undefined ||
+          data.fatal !== undefined ||
+          (data.error !== undefined && data.error !== null);
+
+        if (hasErrorData && (data.type || data.details || data.fatal || data.error)) {
+          console.error("HLS error:", {
+            type: data.type,
+            details: data.details,
+            fatal: data.fatal,
+            error: data.error,
+            muxPlaybackId,
+          });
+        }
+
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
-              console.error('Fatal network error encountered, trying to recover');
+              console.error(
+                "Fatal network error encountered, trying to recover"
+              );
               hls.startLoad();
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
-              console.error('Fatal media error encountered, trying to recover');
+              console.error("Fatal media error encountered, trying to recover");
               hls.recoverMediaError();
               break;
             default:
-              console.error('Fatal error, cannot recover');
+              console.error("Fatal error, cannot recover");
               hls.destroy();
               break;
           }
         }
       });
-    } 
+    }
     // Safari has native HLS support
-    else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-      console.log('Using native HLS support');
+    else if (videoElement.canPlayType("application/vnd.apple.mpegurl")) {
+      console.log("Using native HLS support");
       // eslint-disable-next-line
       videoElement.src = videoSrc;
       videoElement.play().catch((err: Error) => {
-        console.error('Error playing video:', err);
+        console.error("Error playing video:", err);
       });
     } else {
-      console.error('HLS is not supported in this browser');
+      console.error("HLS is not supported in this browser");
     }
 
     return () => {
-      videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      videoElement.removeEventListener('error', handleError);
-      
+      videoElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      videoElement.removeEventListener("error", handleError);
+
       if (hlsRef.current) {
         hlsRef.current.destroy();
         hlsRef.current = null;
       }
       videoElement.pause();
-      videoElement.src = '';
+      videoElement.src = "";
       videoTexture.dispose();
     };
   }, [muxPlaybackId, videoElement, videoTexture]);
@@ -1881,7 +1950,7 @@ function ScreenVideo({ description, muxPlaybackId, name, labelYOffset: customLab
     const geometry = (nodes[props.panel] as THREE.Mesh).geometry;
     geometry.computeBoundingBox();
     const bbox = geometry.boundingBox;
-    
+
     if (bbox) {
       const screenWidth = bbox.max.x - bbox.min.x;
       const screenHeight = bbox.max.y - bbox.min.y;
@@ -1918,7 +1987,7 @@ function ScreenVideo({ description, muxPlaybackId, name, labelYOffset: customLab
         geometry={(nodes[props.frame] as THREE.Mesh).geometry}
         material={materials.Texture}
       />
-      
+
       {/* Panel mesh with video texture */}
       <mesh
         ref={panelRef}
@@ -1937,8 +2006,8 @@ function ScreenVideo({ description, muxPlaybackId, name, labelYOffset: customLab
           handleScreenClick();
         }}
       >
-        <meshBasicMaterial 
-          map={videoTexture} 
+        <meshBasicMaterial
+          map={videoTexture}
           toneMapped={false}
           color="#808080"
         />

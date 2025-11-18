@@ -39,7 +39,12 @@ export function FloatingDescription() {
 
     // Update position to follow the focused screen (throttle to 30fps)
     const now = state.clock.elapsedTime;
-    if (groupRef.current && currentScreenId && screens.length > 0 && (now - lastUpdateTime.current > 1/30)) {
+    if (
+      groupRef.current &&
+      currentScreenId &&
+      screens.length > 0 &&
+      now - lastUpdateTime.current > 1 / 30
+    ) {
       lastUpdateTime.current = now;
       const screenData = screens.find((s) => s.id === currentScreenId);
       if (screenData?.ref?.current) {
@@ -79,8 +84,10 @@ export function FloatingDescription() {
         const upDistance = screenData.descriptionOffset?.up ?? 0.6;
 
         // Position text in front of the screen along its normal, and up along its local up
-        const forwardOffset = normalWorld.multiplyScalar(forwardDistance);
-        const upLocalOffset = upWorld.multiplyScalar(upDistance);
+        const forwardOffset = normalWorld
+          .clone()
+          .multiplyScalar(forwardDistance);
+        const upLocalOffset = upWorld.clone().multiplyScalar(upDistance);
 
         groupRef.current.position.copy(
           center.clone().add(forwardOffset).add(upLocalOffset)
