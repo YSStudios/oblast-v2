@@ -8,13 +8,10 @@ import {
   DepthOfField,
 } from "@react-three/postprocessing";
 import { easing } from "maath";
-import {
-  Instances,
-  Computers,
-  ScreenFocusProvider,
-  useScreenFocus,
-  CAMERA_FOCUS_CONFIG,
-} from "./Computers";
+import { Computers } from "./Computers";
+import { Instances } from "./Instances";
+import { ScreenFocusProvider, useScreenFocus } from "./ScreenFocusContext";
+import { CAMERA_FOCUS_CONFIG } from "./config";
 import { FloatingDescription } from "./FloatingDescription";
 import type { Vector3 } from "three";
 import { useEffect, useRef } from "react";

@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import { Group, Vector3, Box3, Quaternion, Matrix4 } from "three";
-import { useScreenFocus } from "./Computers";
+import { useScreenFocus } from "./ScreenFocusContext";
 
 export function FloatingDescription() {
   const groupRef = useRef<Group>(null);
