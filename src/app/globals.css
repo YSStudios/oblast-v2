@@ -153,3 +153,170 @@ input:focus {
   background: rgba(100, 150, 255, 0.7);
   box-shadow: 0 0 10px rgba(0, 100, 255, 0.9);
 }
+
+.screen-menu {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  padding: 8px;
+  gap: 4px;
+  overflow: hidden;
+  box-sizing: border-box;
+  font-family: 'Courier New', monospace;
+  overflow-y: scroll;
+}
+
+.screen-menu-header {
+  border-bottom: 1px solid #5555FF;
+  padding-bottom: 3px;
+  margin-bottom: 2px;
+  text-align: center;
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8),
+    0 0 20px rgba(85, 85, 255, 0.5);
+	
+}
+
+.screen-menu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.screen-menu-button {
+  background: transparent;
+  border: none;
+  color: #FFFF55;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 10px;
+  text-align: left;
+  transition: all 0.1s ease;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(255, 255, 85, 0.8),
+    0 0 15px rgba(255, 255, 85, 0.4);
+  width: 100%;
+}
+
+.screen-menu-button.is-hovered,
+.screen-menu-button:focus-visible {
+  background: #FFFFFF;
+  color: #0000AA;
+  text-shadow: none;
+  outline: none;
+}
+
+.screen-menu-exit {
+  margin-top: 5px;
+  padding: 3px 0;
+  text-align: center;
+  border-top: 1px solid #5555FF;
+  font-size: 9px;
+  color: #AAAAAA;
+  text-shadow: 0 0 6px rgba(170, 170, 170, 0.6);
+}
+
+.screen-section {
+  font-family: 'Courier New', monospace;
+  padding: 10px;
+  width: 100%;
+  height: 100%;
+}
+
+.screen-section-wrapper {
+  width: 100%;
+  text-align: left;
+}
+
+.screen-section-header {
+  border-bottom: 1px solid #5555FF;
+  padding-bottom: 5px;
+  margin-bottom: 10px;
+  color: #FFFFFF;
+  font-size: 14px;
+  text-align: center;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8),
+    0 0 20px rgba(85, 85, 255, 0.5);
+}
+
+.screen-section-body {
+  font-size: 8px;
+  line-height: 1.5;
+  color: #FFFFFF;
+  margin-bottom: 15px;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.6),
+    0 0 15px rgba(200, 200, 255, 0.3);
+  width: 100%;
+}
+
+.screen-section-line {
+  margin: 3px 0;
+}
+
+.screen-section-line.is-space {
+  margin: 8px 0;
+  opacity: 0;
+}
+
+.screen-section-link {
+  background: transparent;
+  border: none;
+  color: #FFFF55;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 3px 0;
+  margin: 3px 0;
+  text-align: left;
+  width: 100%;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  transition: all 0.1s ease;
+  text-shadow: 0 0 8px rgba(255, 255, 85, 0.8),
+    0 0 15px rgba(255, 255, 85, 0.4);
+}
+
+.screen-section-link.is-hovered,
+.screen-section-link:focus-visible {
+  background: #FFFFFF;
+  color: #0000AA;
+  text-shadow: none;
+  outline: none;
+}
+
+.screen-section-back {
+  margin-top: auto;
+  margin-bottom: 0;
+  background: transparent;
+  border: none;
+  color: #FFFF55;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 5px 10px;
+  transition: all 0.1s ease;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  text-align: left;
+  width: 100%;
+  text-shadow: 0 0 8px rgba(255, 255, 85, 0.8),
+    0 0 15px rgba(255, 255, 85, 0.4);
+}
+
+.screen-section-back.is-hovered,
+.screen-section-back:focus-visible {
+  background: #FFFFFF;
+  color: #0000AA;
+  text-shadow: none;
+  outline: none;
+}

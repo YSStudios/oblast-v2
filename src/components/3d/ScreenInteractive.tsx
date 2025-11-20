@@ -35,11 +35,14 @@ export function ScreenInteractive({
     }
   };
 
-  const sections: Record<string, { 
-    title: string; 
-    content: string[]; 
-    links?: Array<{ line: number; panelId: string }> 
-  }> = {
+  const sections: Record<
+    string,
+    {
+      title: string;
+      content: string[];
+      links?: Array<{ line: number; panelId: string }>;
+    }
+  > = {
     about: {
       title: "About Us",
       content: [
@@ -91,12 +94,16 @@ export function ScreenInteractive({
     },
     contact: {
       title: "Contact Us",
-      content: [
-        "Email: oblaststudio@gmail.com",,
-        "Located: NYC/Baltimore"
-      ],
+      content: ["Email: oblaststudio@gmail.com", "Located: NYC/Baltimore"],
     },
   };
+
+  const mainMenuItems = [
+    { id: "about", label: "About" },
+    { id: "team", label: "Team" },
+    { id: "services", label: "Services" },
+    { id: "contact", label: "Contact" },
+  ] as const;
 
   return (
     <Screen
@@ -125,204 +132,107 @@ export function ScreenInteractive({
               }}
             >
             {!activeSection ? (
-              <div
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0",
-                  alignItems: "stretch",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                  boxSizing: "border-box",
-                  padding: "8px",
-                }}
-              >
-                <div style={{
-                  borderBottom: "1px solid #5555FF",
-                  paddingBottom: "3px",
-                  marginBottom: "5px",
-                  textAlign: "center",
-                  color: "#FFFFFF",
-                  fontSize: "13px",
-                  fontWeight: "bold",
-                  letterSpacing: "1px",
-                  textShadow: "0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(85, 85, 255, 0.5)"
-                }}>
-                  ╔═══ MAIN MENU ═══╗
-                </div>
-                {["About", "Team", "Services", "Contact"].map((item) => (
-                  <button
-                    key={item}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveSection(item.toLowerCase());
-                    }}
-                    onMouseEnter={() => setHoveredItem(item.toLowerCase())}
-                    onMouseLeave={() => setHoveredItem(null)}
-                    style={{
-                      background: hoveredItem === item.toLowerCase() ? "#FFFFFF" : "transparent",
-                      border: "none",
-                      color: hoveredItem === item.toLowerCase() ? "#0000AA" : "#FFFF55",
-                      fontSize: "13px",
-                      cursor: "pointer",
-                      padding: "4px 10px",
-                      textAlign: "left",
-                      transition: "all 0.1s ease",
-                      fontFamily: "'Courier New', monospace",
-                      fontWeight: "bold",
-                      marginBottom: "1px",
-                      textShadow: hoveredItem === item.toLowerCase() 
-                        ? "none"
-                        : "0 0 8px rgba(255, 255, 85, 0.8), 0 0 15px rgba(255, 255, 85, 0.4)"
-                    }}
-                  >
-                    {hoveredItem === item.toLowerCase() ? "► " : "  "}{item.toUpperCase()}
-                  </button>
-                ))}
+              <nav className="screen-menu" aria-label="Main menu">
+                <div className="screen-menu-header">╔═══ MAIN MENU ═══╗</div>
+                <ul className="screen-menu-list" role="list">
+                  {mainMenuItems.map((item) => {
+                    const isHovered = hoveredItem === item.id;
+                    return (
+                      <li key={item.id}>
+                        <button
+                          type="button"
+                          className={`screen-menu-button${isHovered ? " is-hovered" : ""}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveSection(item.id);
+                          }}
+                          onMouseEnter={() => setHoveredItem(item.id)}
+                          onMouseLeave={() => setHoveredItem(null)}
+                        >
+                          {isHovered ? "► " : "  "}
+                          {item.label.toUpperCase()}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
                 <button
+                  type="button"
+                  className={`screen-menu-button screen-menu-exit${hoveredItem === "exit" ? " is-hovered" : ""}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     clearFocus();
                   }}
                   onMouseEnter={() => setHoveredItem("exit")}
                   onMouseLeave={() => setHoveredItem(null)}
-                  style={{
-                    marginTop: "5px",
-                    paddingTop: "3px",
-                    textAlign: "center",
-                    background: hoveredItem === "exit" ? "#FFFFFF" : "transparent",
-                    border: "none",
-                    borderTop: "1px solid #5555FF",
-                    color: hoveredItem === "exit" ? "#0000AA" : "#AAAAAA",
-                    fontSize: "9px",
-                    textShadow: hoveredItem === "exit" 
-                      ? "none"
-                      : "0 0 6px rgba(170, 170, 170, 0.6)",
-                    cursor: "pointer",
-                    width: "100%",
-                    fontFamily: "'Courier New', monospace",
-                    transition: "all 0.1s ease",
-                    padding: "3px 0"
-                  }}
                 >
-                  {hoveredItem === "exit" ? "► " : ""}[ESC] Exit
+                  {hoveredItem === "exit" ? "► " : ""}
+                  [ESC] Exit
                 </button>
-              </div>
+              </nav>
             ) : (
-              <div className="screen-scrollable-content" style={{
-                fontFamily: "'Courier New', monospace",
-                padding: "10px"
-              }}>
-                <div style={{ 
-                  width: "100%", 
-                  textAlign: "left"
-                }}>
-                  <div style={{
-                    borderBottom: "1px solid #5555FF",
-                    paddingBottom: "5px",
-                    marginBottom: "10px",
-                    color: "#FFFFFF",
-                    fontSize: "14px",
-                    fontWeight: "bold",
-                    letterSpacing: "1px",
-                    textShadow: "0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(85, 85, 255, 0.5)"
-                  }}>
+              <section className="screen-scrollable-content screen-section" aria-live="polite">
+                <div className="screen-section-wrapper">
+                  <div className="screen-section-header">
                     ╔═══ {sections[activeSection]?.title.toUpperCase()} ═══╗
                   </div>
-                  <div style={{ 
-                    fontSize: "11px", 
-                    lineHeight: "1.5", 
-                    color: "#FFFFFF",
-                    marginBottom: "15px",
-                    textShadow: "0 0 8px rgba(255, 255, 255, 0.6), 0 0 15px rgba(200, 200, 255, 0.3)"
-                  }}>
+                  <div className="screen-section-body">
                     {sections[activeSection]?.content.map((line, index) => {
-                      // Check if this line is a clickable link
-                      const isLink = activeSection === "services" && 
+                      const isLink =
+                        activeSection === "services" &&
                         sections.services?.links?.some(
                           (link) => link.line === index && line.startsWith(">")
                         );
-                      const linkData = activeSection === "services" && sections.services?.links?.find(
-                        (link) => link.line === index
-                      );
+                      const linkData =
+                        activeSection === "services" &&
+                        sections.services?.links?.find((link) => link.line === index);
                       const isLinkHovered = linkData && hoveredItem === `link-${linkData.panelId}`;
 
                       if (isLink && linkData) {
                         return (
                           <button
+                            type="button"
                             key={`${line}-${index}`}
+                            className={`screen-section-link${isLinkHovered ? " is-hovered" : ""}`}
                             onClick={(e) => {
                               e.stopPropagation();
                               focusVideoScreen(linkData.panelId);
                             }}
                             onMouseEnter={() => setHoveredItem(`link-${linkData.panelId}`)}
                             onMouseLeave={() => setHoveredItem(null)}
-                            style={{
-                              background: isLinkHovered ? "#FFFFFF" : "transparent",
-                              border: "none",
-                              color: isLinkHovered ? "#0000AA" : "#FFFF55",
-                              fontSize: "11px",
-                              cursor: "pointer",
-                              padding: "3px 0",
-                              margin: "3px 0",
-                              textAlign: "left",
-                              width: "100%",
-                              fontFamily: "'Courier New', monospace",
-                              fontWeight: "bold",
-                              transition: "all 0.1s ease",
-                              textShadow: isLinkHovered 
-                                ? "none"
-                                : "0 0 8px rgba(255, 255, 85, 0.8), 0 0 15px rgba(255, 255, 85, 0.4)"
-                            }}
                           >
-                            {isLinkHovered ? "► " : "  "}{line}
+                            {isLinkHovered ? "► " : "  "}
+                            {line}
                           </button>
                         );
                       }
 
+                      const isSpacer = line === "";
                       return (
-                        <p key={`${line}-${index}`} style={{ 
-                          margin: line === "" ? "8px 0" : "3px 0",
-                          opacity: line === "" ? 0 : 1
-                        }}>
-                          {line === "" ? "\u00A0" : `${line}`}
+                        <p
+                          key={`${line}-${index}`}
+                          className={`screen-section-line${isSpacer ? " is-space" : ""}`}
+                        >
+                          {isSpacer ? "\u00A0" : line}
                         </p>
                       );
                     })}
                   </div>
                 </div>
                 <button
+                  type="button"
+                  className={`screen-section-back${hoveredItem === "back" ? " is-hovered" : ""}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     setActiveSection(null);
                   }}
                   onMouseEnter={() => setHoveredItem("back")}
                   onMouseLeave={() => setHoveredItem(null)}
-                  style={{
-                    marginTop: "auto",
-                    marginBottom: "0px",
-                    background: hoveredItem === "back" ? "#FFFFFF" : "transparent",
-                    border: "none",
-                    color: hoveredItem === "back" ? "#0000AA" : "#FFFF55",
-                    fontSize: "12px",
-                    cursor: "pointer",
-                    padding: "5px 10px",
-                    transition: "all 0.1s ease",
-                    fontFamily: "'Courier New', monospace",
-                    fontWeight: "bold",
-                    flexShrink: 0,
-                    textAlign: "left",
-                    width: "100%",
-                    textShadow: hoveredItem === "back" 
-                      ? "none"
-                      : "0 0 8px rgba(255, 255, 85, 0.8), 0 0 15px rgba(255, 255, 85, 0.4)"
-                  }}
                 >
-                  {hoveredItem === "back" ? "► " : "  "}[ESC] BACK TO MENU
+                  {hoveredItem === "back" ? "► " : "  "}
+                  [ESC] BACK TO MENU
                 </button>
-              </div>
+              </section>
             )}
           </div>
         </Html>
