@@ -36,7 +36,6 @@ export function Screen({
   const {
     focusTarget,
     setFocusTarget,
-    clearFocus,
     isTransitioning,
     registerScreen,
     unregisterScreen,
@@ -126,12 +125,12 @@ export function Screen({
   }, [
     focusTarget,
     setFocusTarget,
-    clearFocus,
     camera,
     isTransitioning,
     screenId,
     currentScreenId,
     setCurrentScreenId,
+    zoomDistanceMultiplier,
   ]);
 
   // Register this screen on mount, unregister on unmount

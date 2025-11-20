@@ -675,7 +675,6 @@ export function Computers(props: ComputersProps) {
         panel="LCDScreen003"
         position={[0.27, 1.53, -2.61]}
         name="<< Main Menu >>"
-        description="3D Visualization System - Click to rotate the animated cube object and explore the interactive 3D space with real-time rendering."
         descriptionOffset={{
           forward: 0.2,
           up: 0.65,
