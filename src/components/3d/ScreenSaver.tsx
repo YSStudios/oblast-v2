@@ -1,104 +1,88 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import * as THREE from "three";
 
-export function ScreenSaver() {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const textRef = useRef<THREE.Mesh>(null);
-  const ringRef = useRef<THREE.Mesh>(null);
+// ===== MANUAL CALIBRATION SETTINGS =====
+const POSITION = {
+  x: -10,    // Left(-) / Right(+)
+  y: 2.5,    // Down(-) / Up(+)
+  z: -17,    // Back(-) / Forward(+)
+};
 
-  useFrame((state) => {
-    const time = state.clock.getElapsedTime();
-    
-    // Animate background mesh with wave effect
-    if (meshRef.current && (meshRef.current.material as THREE.ShaderMaterial).uniforms) {
-      (meshRef.current.material as THREE.ShaderMaterial).uniforms.uTime.value = time;
+const BOUNDS = {
+  minX: -2.5,  // Left boundary
+  maxX: 2.5,   // Right boundary
+  minY: -2,    // Bottom boundary
+  maxY: 2,     // Top boundary
+};
+
+const FONT_SIZE = 1;  // Adjust text size
+// =======================================
+
+export function ScreenSaver() {
+  const textRef = useRef<THREE.Mesh>(null);
+  const velocityRef = useRef({ x: 0.8, y: 0.6 });
+  const [color, setColor] = useState("#FF0000");
+  
+  const bounds = BOUNDS;
+
+  const colors = [
+    "#FF0000", // Red
+    "#00FF00", // Green
+    "#0000FF", // Blue
+    "#FFFF00", // Yellow
+    "#FF00FF", // Magenta
+    "#00FFFF", // Cyan
+    "#FF8800", // Orange
+    "#8800FF", // Purple
+  ];
+
+  useFrame((state, delta) => {
+    if (!textRef.current) return;
+
+    // Update position based on velocity
+    textRef.current.position.x += velocityRef.current.x * delta;
+    textRef.current.position.y += velocityRef.current.y * delta;
+
+    // Check for collisions and bounce
+    let bounced = false;
+
+    if (textRef.current.position.x >= bounds.maxX || textRef.current.position.x <= bounds.minX) {
+      velocityRef.current.x *= -1;
+      bounced = true;
     }
-    
-    // Gentle floating animation for text
-    if (textRef.current) {
-      textRef.current.position.y = Math.sin(time * 0.5) * 0.3;
+
+    if (textRef.current.position.y >= bounds.maxY || textRef.current.position.y <= bounds.minY) {
+      velocityRef.current.y *= -1;
+      bounced = true;
     }
-    
-    // Rotate the ring slowly
-    if (ringRef.current) {
-      ringRef.current.rotation.z = time * 0.2;
+
+    // Change color on bounce (classic DVD behavior)
+    if (bounced) {
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      setColor(randomColor);
     }
   });
 
   return (
-    <group position={[-11, 1, -5]}>
-      {/* Animated background with shader */}
-      <mesh ref={meshRef} position={[0, 0, -8]}>
-        <planeGeometry args={[20, 20]} />
-        <shaderMaterial
-          uniforms={{
-            uTime: { value: 0 },
-            uColor1: { value: new THREE.Color(0x4a90e2) },
-            uColor2: { value: new THREE.Color(0x7b68ee) },
-          }}
-          vertexShader={`
-            varying vec2 vUv;
-            void main() {
-              vUv = uv;
-              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-          `}
-          fragmentShader={`
-            uniform float uTime;
-            uniform vec3 uColor1;
-            uniform vec3 uColor2;
-            varying vec2 vUv;
-            
-            void main() {
-              vec2 uv = vUv;
-              
-              // Create wave pattern
-              float wave1 = sin(uv.x * 8.0 + uTime * 0.8) * 0.5 + 0.5;
-              float wave2 = sin(uv.y * 8.0 - uTime * 0.6) * 0.5 + 0.5;
-              float wave = (wave1 + wave2) * 0.5;
-              
-              // Create circular gradient from center
-              vec2 center = vec2(0.5, 0.5);
-              float dist = distance(uv, center);
-              float gradient = 1.0 - smoothstep(0.0, 0.8, dist);
-              
-              // Mix colors with wave
-              vec3 color = mix(uColor1, uColor2, wave);
-              
-              // Apply gradient and boost brightness
-              color = color * gradient * 1.5;
-              
-              gl_FragColor = vec4(color, 1.0);
-            }
-          `}
-        />
-      </mesh>
-
-      {/* "MENU" text */}
+    <group position={[POSITION.x, POSITION.y, POSITION.z]}>
+      {/* Bouncing "MENU" text */}
       <Text
         ref={textRef}
         position={[0, 0, 0]}
-        fontSize={2}
-        color="#ffffff"
+        fontSize={FONT_SIZE}
+        color={color}
         anchorX="center"
         anchorY="middle"
         font="/fonts/Inter-Medium.woff"
-        letterSpacing={0.1}
-        outlineWidth={0.05}
-        outlineColor="#000000"
+        letterSpacing={0.2}
+        fontWeight="bold"
       >
         MENU
       </Text>
-
-      {/* Rotating ring decoration */}
-      <mesh ref={ringRef} position={[0, 0, -0.5]}>
-        <torusGeometry args={[4, 0.15, 16, 100]} />
-        <meshBasicMaterial color="#35c19f" transparent opacity={0.5} />
-      </mesh>
     </group>
   );
 }

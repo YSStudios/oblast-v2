@@ -261,8 +261,12 @@ function CameraRig() {
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // ESC key should always work to unfocus, regardless of what element has focus
       if (e.key === "Escape" && focusTarget && !isTransitioning) {
+        e.preventDefault();
+        e.stopPropagation();
         clearFocus();
+        return;
       }
       // Toggle mouse follow with 'M' key
       if (e.key === "m" || e.key === "M") {
@@ -284,8 +288,9 @@ function CameraRig() {
         }
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    // Use capture phase to catch events before they reach focused elements
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [
     focusTarget,
     clearFocus,

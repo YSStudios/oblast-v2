@@ -17,10 +17,29 @@ export function ScreenInteractive({
 }: ScreenInteractiveProps) {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-  const { currentScreenId, zoomInComplete } = useScreenFocus();
+  const { currentScreenId, zoomInComplete, clearFocus, screens } = useScreenFocus();
   const isFocused = currentScreenId === props.panel && zoomInComplete;
 
-  const sections: Record<string, { title: string; content: string[] }> = {
+  // Function to focus on a video screen
+  const focusVideoScreen = (panelId: string) => {
+    const screen = screens.find((s) => s.id === panelId);
+    if (screen && screen.handleClick) {
+      // Clear current focus first, then focus on the target screen
+      clearFocus();
+      // Small delay to allow zoom out before zooming in
+      setTimeout(() => {
+        screen.handleClick();
+      }, 100);
+    } else {
+      console.warn(`Screen with panel ID "${panelId}" not found. Available screens:`, screens.map(s => s.id));
+    }
+  };
+
+  const sections: Record<string, { 
+    title: string; 
+    content: string[]; 
+    links?: Array<{ line: number; panelId: string }> 
+  }> = {
     about: {
       title: "About Us",
       content: [
@@ -52,23 +71,29 @@ export function ScreenInteractive({
         "3D Visualization - Interactive 3D",
         "experiences and graphics",
         "",
+        "Case Studies:",
+        "",
+        ">1 - Kirill.Agency",
+        ">2 - Bourne Creatives",
+        ">3 - Vega.Earth",
+        "",
         "Consulting - Strategic technology",
         "guidance",
         "",
         "Support & Maintenance - Ongoing",
         "care for your digital solutions",
       ],
+      links: [
+        { line: 8, panelId: "LCDScreen001" },   // Case Study 1 - Kirill.Agency (index 8)
+        { line: 9, panelId: "LCDScreen004" },   // Case Study 2 - Bourne Creatives (index 9)
+        { line: 10, panelId: "LCDScreen" },     // Case Study 3 - Vega.Earth (index 10)
+      ],
     },
     contact: {
       title: "Contact Us",
       content: [
-        "Email: hello@example.com",
-        "",
-        "Phone: +1 (555) 123-4567",
-        "",
-        "Address:",
-        "123 Innovation Street",
-        "Tech City, TC 12345",
+        "Email: oblaststudio@gmail.com",,
+        "Located: NYC/Baltimore"
       ],
     },
   };
@@ -156,17 +181,34 @@ export function ScreenInteractive({
                     {hoveredItem === item.toLowerCase() ? "► " : "  "}{item.toUpperCase()}
                   </button>
                 ))}
-                <div style={{
-                  borderTop: "1px solid #5555FF",
-                  marginTop: "5px",
-                  paddingTop: "3px",
-                  textAlign: "center",
-                  color: "#AAAAAA",
-                  fontSize: "9px",
-                  textShadow: "0 0 6px rgba(170, 170, 170, 0.6)"
-                }}>
-                  [ESC] Exit
-                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearFocus();
+                  }}
+                  onMouseEnter={() => setHoveredItem("exit")}
+                  onMouseLeave={() => setHoveredItem(null)}
+                  style={{
+                    marginTop: "5px",
+                    paddingTop: "3px",
+                    textAlign: "center",
+                    background: hoveredItem === "exit" ? "#FFFFFF" : "transparent",
+                    border: "none",
+                    borderTop: "1px solid #5555FF",
+                    color: hoveredItem === "exit" ? "#0000AA" : "#AAAAAA",
+                    fontSize: "9px",
+                    textShadow: hoveredItem === "exit" 
+                      ? "none"
+                      : "0 0 6px rgba(170, 170, 170, 0.6)",
+                    cursor: "pointer",
+                    width: "100%",
+                    fontFamily: "'Courier New', monospace",
+                    transition: "all 0.1s ease",
+                    padding: "3px 0"
+                  }}
+                >
+                  {hoveredItem === "exit" ? "► " : ""}[ESC] Exit
+                </button>
               </div>
             ) : (
               <div className="screen-scrollable-content" style={{
@@ -196,14 +238,59 @@ export function ScreenInteractive({
                     marginBottom: "15px",
                     textShadow: "0 0 8px rgba(255, 255, 255, 0.6), 0 0 15px rgba(200, 200, 255, 0.3)"
                   }}>
-                    {sections[activeSection]?.content.map((line) => (
-                      <p key={line} style={{ 
-                        margin: line === "" ? "8px 0" : "3px 0",
-                        opacity: line === "" ? 0 : 1
-                      }}>
-                        {line === "" ? "\u00A0" : `${line}`}
-                      </p>
-                    ))}
+                    {sections[activeSection]?.content.map((line, index) => {
+                      // Check if this line is a clickable link
+                      const isLink = activeSection === "services" && 
+                        sections.services?.links?.some(
+                          (link) => link.line === index && line.startsWith(">")
+                        );
+                      const linkData = activeSection === "services" && sections.services?.links?.find(
+                        (link) => link.line === index
+                      );
+                      const isLinkHovered = linkData && hoveredItem === `link-${linkData.panelId}`;
+
+                      if (isLink && linkData) {
+                        return (
+                          <button
+                            key={`${line}-${index}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              focusVideoScreen(linkData.panelId);
+                            }}
+                            onMouseEnter={() => setHoveredItem(`link-${linkData.panelId}`)}
+                            onMouseLeave={() => setHoveredItem(null)}
+                            style={{
+                              background: isLinkHovered ? "#FFFFFF" : "transparent",
+                              border: "none",
+                              color: isLinkHovered ? "#0000AA" : "#FFFF55",
+                              fontSize: "11px",
+                              cursor: "pointer",
+                              padding: "3px 0",
+                              margin: "3px 0",
+                              textAlign: "left",
+                              width: "100%",
+                              fontFamily: "'Courier New', monospace",
+                              fontWeight: "bold",
+                              transition: "all 0.1s ease",
+                              textShadow: isLinkHovered 
+                                ? "none"
+                                : "0 0 8px rgba(255, 255, 85, 0.8), 0 0 15px rgba(255, 255, 85, 0.4)"
+                            }}
+                          >
+                            {isLinkHovered ? "► " : "  "}{line}
+                          </button>
+                        );
+                      }
+
+                      return (
+                        <p key={`${line}-${index}`} style={{ 
+                          margin: line === "" ? "8px 0" : "3px 0",
+                          opacity: line === "" ? 0 : 1
+                        }}>
+                          {line === "" ? "\u00A0" : `${line}`}
+                        </p>
+                      );
+                    })}
                   </div>
                 </div>
                 <button

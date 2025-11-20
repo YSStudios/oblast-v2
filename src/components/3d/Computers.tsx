@@ -630,25 +630,25 @@ export function Computers(props: ComputersProps) {
         scale={-1}
       />
 
-      {/* LCDScreen (no number) - Video 1 */}
+      {/* LCDScreen (no number) - Vega.Earth */}
       <ScreenVideo
         frame="Object_212"
         panel="LCDScreen"
         position={[-2.73, 0.63, -0.52]}
         rotation={[0, 1.09, 0]}
-        name="<< Terminal Screen >>"
-        description="Terminal Screen - System output display"
+        name="<< Vega.Earth >>"
+        description="Vega.Earth - Interactive environmental data visualization platform showcasing climate metrics and sustainability insights through innovative 3D interfaces."
         muxPlaybackId="NRXAS23NDPmK6OdqD5GZ6zngNl8aIPXGbeX1ObtkNnM"
       />
 
-      {/* LCDScreen001 - Video 2 */}
+      {/* LCDScreen001 - Kirill.Agency */}
       <ScreenVideo
         frame="Object_209"
         panel="LCDScreen001"
         position={[-1.43, 2.5, -1.8]}
         rotation={[0, 1, 0]}
-        name="<< Display Monitor >>"
-        description="Display Monitor - Video playback"
+        name="<< Kirill.Agency >>"
+        description="Kirill.Agency - Creative agency portfolio featuring cutting-edge web design, brand identity, and digital experiences that push creative boundaries."
         muxPlaybackId="UchQ5kkYx4IYw4U3Tvqvx5adzlydwWPP61TpajFDl01Y"
       />
 
@@ -674,7 +674,7 @@ export function Computers(props: ComputersProps) {
         frame="Object_206"
         panel="LCDScreen003"
         position={[0.27, 1.53, -2.61]}
-        name="<< Interactive Screen >>"
+        name="<< Main Menu >>"
         description="3D Visualization System - Click to rotate the animated cube object and explore the interactive 3D space with real-time rendering."
         descriptionOffset={{
           forward: 0.2,
@@ -684,19 +684,19 @@ export function Computers(props: ComputersProps) {
         zoomDistanceMultiplier={1.7}
       />
 
-      {/* LCDScreen004 - Video 3 */}
+      {/* LCDScreen004 - Bourne Creatives */}
       <ScreenVideo
         frame="Object_218"
         panel="LCDScreen004"
         position={[3.11, 2.15, -0.18]}
         rotation={[0, -0.79, 0]}
         scale={0.81}
-        name="<< Video Display >>"
-        description="Debug Console - screen module debug website link >>>>>"
+        name="<< Bourne Creatives >>"
+        description="Bourne Creatives - Strategic design studio specializing in brand development, digital experiences, and creative solutions for forward-thinking businesses."
         muxPlaybackId="V01ic01DGkzDBvjPN4eOw17NPBEeQQRSRVF1SOr1JPPM8"
         descriptionOffset={{
-          forward: 0.3,
-          up: 0.51,
+          forward: 0.05,
+          up: 0.6,
           textY: 0.7,
         }}
       />

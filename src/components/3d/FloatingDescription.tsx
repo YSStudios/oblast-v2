@@ -154,7 +154,7 @@ export function FloatingDescription() {
     <group ref={groupRef}>
       <Text
         position={[0, textYOffset, 0]}
-        fontSize={0.03}
+        fontSize={0.02}
         color="#ff2919"
         anchorX="center"
         anchorY="top"
@@ -166,7 +166,7 @@ export function FloatingDescription() {
         renderOrder={10000}
         material-depthTest={false}
         material-depthWrite={false}
-        maxWidth={1.2}
+        maxWidth={.7}
         textAlign="left"
         lineHeight={1.2}
       >
