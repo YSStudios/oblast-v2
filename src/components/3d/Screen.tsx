@@ -289,8 +289,10 @@ export function Screen({
             {children}
           </RenderTexture>
         </meshBasicMaterial>
-        {panelChildren}
       </mesh>
+
+      {/* Render panelChildren outside the mesh to avoid bounding box issues */}
+      {panelChildren}
 
       {/* Darkening overlay for non-focused screens */}
       {darkenOpacity > 0.01 && (

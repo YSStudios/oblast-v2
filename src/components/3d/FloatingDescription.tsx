@@ -51,10 +51,27 @@ export function FloatingDescription() {
         // Update world matrix to get accurate position
         screenData.ref.current.updateWorldMatrix(true, false);
 
-        // Get the bounding box and center of the screen
-        const bbox = new Box3().setFromObject(screenData.ref.current);
+        // Get the bounding box from the mesh geometry only (not children)
+        // This avoids issues with three-mesh-ui blocks that may not be initialized
+        const geometry = screenData.ref.current.geometry;
+        if (!geometry || !geometry.boundingBox) {
+          geometry?.computeBoundingBox();
+        }
+
+        const bbox = geometry?.boundingBox;
+        if (!bbox) {
+          return;
+        }
+
+        // Transform bounding box to world space
         const center = new Vector3();
         bbox.getCenter(center);
+        screenData.ref.current.localToWorld(center);
+
+        // Check for NaN values before proceeding
+        if (isNaN(center.x) || isNaN(center.y) || isNaN(center.z)) {
+          return;
+        }
 
         // Extract the screen's rotation from its world matrix
         const worldMatrix = screenData.ref.current.matrixWorld;
