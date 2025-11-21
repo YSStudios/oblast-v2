@@ -4,7 +4,7 @@ import { useState } from "react";
 import { PerspectiveCamera } from "@react-three/drei";
 import { Screen } from "./Screen";
 import { useScreenFocus } from "./ScreenFocusContext";
-import { ScreenSaver } from "./ScreenSaver";
+import { SpinningBox } from "./SpinningBox";
 import { ThreeMeshUIMenu } from "./ThreeMeshUIMenu";
 import type { ScreenInteractiveProps } from "./types";
 
@@ -50,7 +50,7 @@ export function ScreenInteractive({
       <pointLight decay={0} position={[-10, -10, -10]} />
       
       {/* Show screensaver only when not focused */}
-      {!isFocused && <ScreenSaver />}
+      {!isFocused && <SpinningBox scale={3} position={[0, 0, 0]} />}
     </Screen>
   );
 }
