@@ -337,6 +337,10 @@ export function ScreenVideo({
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: false,
+        debug: false,
+        maxBufferLength: 30,
+        maxMaxBufferLength: 600,
+        backBufferLength: 30,
       });
 
       hlsRef.current = hls;
@@ -351,24 +355,30 @@ export function ScreenVideo({
       });
 
       hls.on(Hls.Events.ERROR, (_event: string, data: ErrorData) => {
-        // Only log if we have actual error data (suppress empty error objects)
-        const hasErrorData =
-          data.type !== undefined ||
-          data.details !== undefined ||
-          data.fatal !== undefined ||
+        // Only log if we have actual meaningful error data
+        const hasValidErrorData =
+          (data.type !== undefined && data.type !== null) ||
+          (data.details !== undefined && data.details !== null) ||
+          (data.fatal === true) ||
           (data.error !== undefined && data.error !== null);
 
-        if (hasErrorData && (data.type || data.details || data.fatal || data.error)) {
-          console.error("HLS error:", {
+        // Only log non-fatal errors with actual data
+        if (hasValidErrorData && !data.fatal) {
+          console.warn("HLS non-fatal error:", {
             type: data.type,
             details: data.details,
-            fatal: data.fatal,
             error: data.error,
             muxPlaybackId,
           });
         }
 
         if (data.fatal) {
+          console.error("HLS fatal error:", {
+            type: data.type,
+            details: data.details,
+            error: data.error,
+            muxPlaybackId,
+          });
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
               console.error(
