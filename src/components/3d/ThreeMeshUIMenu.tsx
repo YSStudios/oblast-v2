@@ -54,22 +54,29 @@ export function ThreeMeshUIMenu({
   const lastMousePosition = useRef({ x: 0, y: 0 });
 
   // Cache color objects to avoid creating new ones every frame
-  const colors = useMemo(() => ({
-    green: new THREE.Color(0x00ff00),
-    red: new THREE.Color(0xff0000),
-    dark: new THREE.Color(0x1a1a1a),
-  }), []);
+  const colors = useMemo(
+    () => ({
+      green: new THREE.Color(0x00ff00),
+      red: new THREE.Color(0xff0000),
+      dark: new THREE.Color(0x1a1a1a),
+    }),
+    []
+  );
 
   // Helper function to reset button background color
-  const resetButtonColor = useCallback((button: ThreeMeshUIBlock) => {
-    if (!button.set) return;
-    const isExitButton = button.userData?.id === "exit" || button.userData?.id === "back";
-    button.set({
-      backgroundColor: isExitButton ? colors.red : colors.dark,
-      backgroundOpacity: 0.8,
-    });
-    needsUpdate.current = true;
-  }, [colors]);
+  const resetButtonColor = useCallback(
+    (button: ThreeMeshUIBlock) => {
+      if (!button.set) return;
+      const isExitButton =
+        button.userData?.id === "exit" || button.userData?.id === "back";
+      button.set({
+        backgroundColor: isExitButton ? colors.red : colors.dark,
+        backgroundOpacity: 0.8,
+      });
+      needsUpdate.current = true;
+    },
+    [colors]
+  );
 
   const sections = useMemo<Record<SectionKey, SectionData>>(
     () => ({
@@ -117,7 +124,7 @@ export function ThreeMeshUIMenu({
       width: 0.9,
       height: 0.9,
       padding: 0.05,
-      justifyContent: "start",
+      justifyContent: "center",
       contentDirection: "column",
       fontFamily: "/fonts/Roboto-msdf.json",
       fontTexture: "/fonts/Roboto-msdf.png",
@@ -127,7 +134,7 @@ export function ThreeMeshUIMenu({
     });
 
     // Position higher for better centering in the monitor frame
-    const yPosition = activeSection ? 0.63 : 0.54; // Description higher than menu
+    const yPosition = activeSection ? 0.62 : 0.6; // Description lower than menu
     container.position.set(0, yPosition, 0.195);
 
     // Set explicit render order to avoid z-fighting
@@ -552,7 +559,10 @@ export function ThreeMeshUIMenu({
         const uiBlock = obj as ThreeMeshUIBlock;
 
         // Reset previous hover if different element
-        if (hoveredElementRef.current && hoveredElementRef.current !== uiBlock) {
+        if (
+          hoveredElementRef.current &&
+          hoveredElementRef.current !== uiBlock
+        ) {
           resetButtonColor(hoveredElementRef.current);
           hoveredElementRef.current = null;
         }
