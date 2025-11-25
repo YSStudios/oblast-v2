@@ -638,6 +638,7 @@ export function Computers(props: ComputersProps) {
         rotation={[0, 1.09, 0]}
         name="<< Vega.Earth >>"
         description="Vega.Earth - Interactive environmental data visualization platform showcasing climate metrics and sustainability insights through innovative 3D interfaces."
+        url="https://vega.earth"
         muxPlaybackId="NRXAS23NDPmK6OdqD5GZ6zngNl8aIPXGbeX1ObtkNnM"
       />
 
@@ -649,6 +650,7 @@ export function Computers(props: ComputersProps) {
         rotation={[0, 1, 0]}
         name="<< Kirill.Agency >>"
         description="Kirill.Agency - Creative agency portfolio featuring cutting-edge web design, brand identity, and digital experiences that push creative boundaries."
+        url="https://kirill.agency"
         muxPlaybackId="UchQ5kkYx4IYw4U3Tvqvx5adzlydwWPP61TpajFDl01Y"
       />
 
@@ -692,6 +694,7 @@ export function Computers(props: ComputersProps) {
         scale={0.81}
         name="<< Bourne Creatives >>"
         description="Bourne Creatives - Strategic design studio specializing in brand development, digital experiences, and creative solutions for forward-thinking businesses."
+        url="https://bournecreatives.com"
         muxPlaybackId="V01ic01DGkzDBvjPN4eOw17NPBEeQQRSRVF1SOr1JPPM8"
         descriptionOffset={{
           forward: 0.05,

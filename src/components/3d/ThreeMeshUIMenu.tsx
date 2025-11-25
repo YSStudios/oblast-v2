@@ -121,7 +121,7 @@ export function ThreeMeshUIMenu({
 
     // Create main container with explicit dimensions to avoid NaN
     const container = new ThreeMeshUI.Block({
-      width: 0.9,
+      width: 0.8,
       height: 0.9,
       padding: 0.05,
       justifyContent: "center",
@@ -134,7 +134,7 @@ export function ThreeMeshUIMenu({
     });
 
     // Position higher for better centering in the monitor frame
-    const yPosition = activeSection ? 0.62 : 0.6; // Description lower than menu
+    const yPosition = activeSection ? 0.62 : 0.65; // Description lower than menu
     container.position.set(0, yPosition, 0.195);
 
     // Set explicit render order to avoid z-fighting

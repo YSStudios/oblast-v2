@@ -27,6 +27,7 @@ interface ScreenFocusContextType {
     ref: React.RefObject<THREE.Mesh | null> | null,
     name?: string,
     description?: string,
+    url?: string,
     descriptionOffset?: {
       forward?: number;
       up?: number;
@@ -61,6 +62,7 @@ export function ScreenFocusProvider({ children }: { children: ReactNode }) {
       ref: React.RefObject<THREE.Mesh | null> | null,
       name?: string,
       description?: string,
+      url?: string,
       descriptionOffset?: {
         forward?: number;
         up?: number;
@@ -72,7 +74,7 @@ export function ScreenFocusProvider({ children }: { children: ReactNode }) {
         if (prev.find((s: ScreenRegistration) => s.id === id)) return prev;
         return [
           ...prev,
-          { id, handleClick, ref, name, description, descriptionOffset },
+          { id, handleClick, ref, name, description, url, descriptionOffset },
         ];
       });
     },
