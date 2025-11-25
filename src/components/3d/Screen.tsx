@@ -14,6 +14,7 @@ export function Screen({
   children,
   name,
   description,
+  url,
   labelYOffset: customLabelYOffset,
   descriptionOffset,
   panelChildren,
@@ -141,6 +142,7 @@ export function Screen({
       panelRef,
       name,
       description,
+      url,
       descriptionOffset
     );
     return () => {
@@ -153,6 +155,7 @@ export function Screen({
     unregisterScreen,
     name,
     description,
+    url,
     descriptionOffset,
   ]);
 

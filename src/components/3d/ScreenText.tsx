@@ -13,6 +13,7 @@ export function ScreenText({
   y = 1.2,
   name,
   description,
+  url,
   labelYOffset,
   descriptionOffset,
   ...props
@@ -30,6 +31,7 @@ export function ScreenText({
       {...props}
       name={name}
       description={description}
+      url={url}
       labelYOffset={labelYOffset}
       descriptionOffset={descriptionOffset}
     >
