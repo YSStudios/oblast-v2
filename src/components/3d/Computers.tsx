@@ -683,6 +683,7 @@ export function Computers(props: ComputersProps) {
           textY: 0.7,
         }}
         zoomDistanceMultiplier={1.7}
+        muxPlaybackId="JZCA1iXCmqrktKpUizgwPGi3j023ZSKGyvgc4IjMdZP4"
       />
 
       {/* LCDScreen004 - Bourne Creatives */}
