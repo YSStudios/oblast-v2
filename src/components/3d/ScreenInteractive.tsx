@@ -23,6 +23,7 @@ export function ScreenInteractive({
 }: ScreenInteractiveProps) {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [loadingComplete, setLoadingComplete] = useState(false);
+  const [showBios, setShowBios] = useState(false);
   const { currentScreenId, zoomInComplete, clearFocus } = useScreenFocus();
   const isFocused = currentScreenId === props.panel && zoomInComplete;
   const hlsRef = useRef<Hls | null>(null);
@@ -188,18 +189,27 @@ export function ScreenInteractive({
     };
   }, [muxPlaybackId, videoElement, videoTexture]);
 
-  // Add delay after zoom completes before showing menu
+  // Add delay after zoom completes before showing BIOS and then menu
   useEffect(() => {
     if (isFocused) {
-      // Show loading screen for 2 seconds after zoom completes
-      const timer = setTimeout(() => {
-        setLoadingComplete(true);
-      }, 2000);
+      // Show video for 1.5 seconds, then show BIOS screen
+      const biosTimer = setTimeout(() => {
+        setShowBios(true);
+      }, 1500);
 
-      return () => clearTimeout(timer);
+      // Show loading screen for 3.5 seconds total (1.5s video + 2s BIOS) before menu
+      const menuTimer = setTimeout(() => {
+        setLoadingComplete(true);
+      }, 3500);
+
+      return () => {
+        clearTimeout(biosTimer);
+        clearTimeout(menuTimer);
+      };
     } else {
       // Reset loading state when not focused
       setLoadingComplete(false);
+      setShowBios(false);
     }
   }, [isFocused]);
 
@@ -213,7 +223,7 @@ export function ScreenInteractive({
       zoomDistanceMultiplier={zoomDistanceMultiplier}
       panelChildren={
         <>
-          {isFocused ? (
+          {isFocused && showBios ? (
             loadingComplete ? (
               <ThreeMeshUIMenu
                 activeSection={activeSection}
@@ -225,8 +235,8 @@ export function ScreenInteractive({
             )
           ) : null}
 
-          {/* Video overlay when not focused and muxPlaybackId is provided */}
-          {!isFocused && muxPlaybackId && videoTexture && (
+          {/* Video overlay when not focused OR when focused but BIOS hasn't started yet */}
+          {(!isFocused || (isFocused && !showBios)) && muxPlaybackId && videoTexture && (
             <mesh position={[0, 0.45, 0.2]}>
               <planeGeometry args={[1.3, 1.3]} />
               <meshBasicMaterial map={videoTexture} toneMapped={false} />
