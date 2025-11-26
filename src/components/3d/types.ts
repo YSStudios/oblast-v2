@@ -84,6 +84,7 @@ export interface ScreenInteractiveProps {
     textY?: number;
   };
   zoomDistanceMultiplier?: number;
+  muxPlaybackId?: string;
 }
 
 export interface ScreenVideoProps {
