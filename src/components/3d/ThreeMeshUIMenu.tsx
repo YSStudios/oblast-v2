@@ -54,7 +54,7 @@ export function ThreeMeshUIMenu({
   const needsUpdate = useRef(false);
   const lastMousePosition = useRef({ x: 0, y: 0 });
   const hlsRef = useRef<Hls | null>(null);
-  const muxPlaybackId = "19YC0201FS1k7UDBCscn81YcZ2Y7Fo127Ba402BRO5UIEc";
+  const muxPlaybackId = "OjXH00fGwigo2Tvj6frAhBYbSmcjUVBOjnqHHgx4hd9c";
 
   // Cache color objects to avoid creating new ones every frame
   const colors = useMemo(
@@ -679,13 +679,41 @@ export function ThreeMeshUIMenu({
     }
   });
 
+  // Custom shader material to remove black background
+  const videoMaterial = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        map: { value: videoTexture },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D map;
+        varying vec2 vUv;
+        void main() {
+          vec4 texColor = texture2D(map, vUv);
+          // Calculate luminance
+          float luminance = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));
+          // Use luminance as alpha - makes blacks transparent
+          gl_FragColor = vec4(texColor.rgb, luminance);
+        }
+      `,
+      transparent: true,
+      depthWrite: false,
+    });
+  }, [videoTexture]);
+
   return (
     <group ref={containerRef}>
       {/* Video on the right side - only show on main menu */}
       {!activeSection && (
-        <mesh position={[0.27, 0.61, 0.195]}>
+        <mesh position={[0.27, 0.61, 0.195]} material={videoMaterial}>
           <planeGeometry args={[0.6, 0.85]} />
-          <meshBasicMaterial map={videoTexture} toneMapped={false} />
         </mesh>
       )}
     </group>
