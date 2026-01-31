@@ -476,6 +476,17 @@ export function ScreenVideo({
         geometry={(nodes[props.panel] as THREE.Mesh).geometry}
         onPointerOver={(e) => {
           e.stopPropagation();
+          // Compute line start position immediately so it doesn't jump
+          if (panelRef.current && groupRef.current) {
+            panelRef.current.updateWorldMatrix(true, false);
+            groupRef.current.updateWorldMatrix(true, false);
+            const bbox = new THREE.Box3().setFromObject(panelRef.current);
+            const center = new THREE.Vector3();
+            bbox.getCenter(center);
+            const worldPos = new THREE.Vector3(center.x, bbox.max.y, center.z);
+            groupRef.current.worldToLocal(worldPos);
+            setLineStart([worldPos.x, worldPos.y, worldPos.z]);
+          }
           setHovered(true);
           document.body.style.cursor = "pointer";
         }}
