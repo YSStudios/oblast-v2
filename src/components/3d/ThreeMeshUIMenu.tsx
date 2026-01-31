@@ -318,7 +318,7 @@ export function ThreeMeshUIMenu({
 
       container.add(menuColumn);
 
-      // Decorative separator line
+      // Decorative separator line //
       const separator = new ThreeMeshUI.Block({
         width: 0.45,
         height: 0.005,
