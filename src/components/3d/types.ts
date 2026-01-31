@@ -25,6 +25,7 @@ export interface ScreenRegistration {
   ref: React.RefObject<THREE.Mesh | null> | null;
   name?: string;
   description?: string;
+  url?: string;
   descriptionOffset?: {
     forward?: number;
     up?: number;
@@ -41,6 +42,7 @@ export interface ScreenProps {
   scale?: number;
   name?: string;
   description?: string;
+  url?: string;
   labelYOffset?: number;
   descriptionOffset?: {
     forward?: number;
@@ -61,6 +63,7 @@ export interface ScreenTextProps {
   scale?: number;
   name?: string;
   description?: string;
+  url?: string;
   labelYOffset?: number;
   descriptionOffset?: {
     forward?: number;
@@ -77,6 +80,7 @@ export interface ScreenInteractiveProps {
   scale?: number;
   name?: string;
   description?: string;
+  url?: string;
   labelYOffset?: number;
   descriptionOffset?: {
     forward?: number;
@@ -95,6 +99,7 @@ export interface ScreenVideoProps {
   scale?: number;
   name?: string;
   description?: string;
+  url?: string;
   labelYOffset?: number;
   descriptionOffset?: {
     forward?: number;
