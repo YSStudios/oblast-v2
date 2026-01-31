@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import ThreeMeshUI from "three-mesh-ui";
+import Hls, { type ErrorData } from "hls.js";
 
 // Type definitions for three-mesh-ui (library lacks official types)
 type ThreeMeshUIBlock = ThreeMeshUI.Block & {
@@ -52,6 +53,8 @@ export function ThreeMeshUIMenu({
   const hoveredElementRef = useRef<ThreeMeshUIBlock | null>(null);
   const needsUpdate = useRef(false);
   const lastMousePosition = useRef({ x: 0, y: 0 });
+  const hlsRef = useRef<Hls | null>(null);
+  const muxPlaybackId = "OjXH00fGwigo2Tvj6frAhBYbSmcjUVBOjnqHHgx4hd9c";
 
   // Cache color objects to avoid creating new ones every frame
   const colors = useMemo(
@@ -62,6 +65,28 @@ export function ThreeMeshUIMenu({
     }),
     []
   );
+
+  // Create video and texture for the right side
+  const { videoElement, videoTexture } = useMemo(() => {
+    const video = document.createElement("video");
+    video.crossOrigin = "anonymous";
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.autoplay = true;
+
+    const texture = new THREE.VideoTexture(video);
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = false;
+    texture.format = THREE.RGBAFormat;
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.flipY = true;
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+
+    return { videoElement: video, videoTexture: texture };
+  }, []);
 
   // Helper function to reset button background color
   const resetButtonColor = useCallback(
@@ -115,13 +140,82 @@ export function ThreeMeshUIMenu({
     []
   );
 
+  // Setup HLS and video loading
+  useEffect(() => {
+    const videoSrc = `https://stream.mux.com/${muxPlaybackId}.m3u8`;
+
+    const handleError = (e: Event) => {
+      console.error("Menu video element error:", e);
+    };
+
+    videoElement.addEventListener("error", handleError);
+
+    if (Hls.isSupported()) {
+      const hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: false,
+        debug: false,
+        maxBufferLength: 30,
+        maxMaxBufferLength: 600,
+        backBufferLength: 30,
+      });
+
+      hlsRef.current = hls;
+      hls.loadSource(videoSrc);
+      hls.attachMedia(videoElement);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        videoElement.play().catch((err: Error) => {
+          console.error("Error playing menu video:", err);
+        });
+      });
+
+      hls.on(Hls.Events.ERROR, (_event: string, data: ErrorData) => {
+        if (data.fatal) {
+          console.error("HLS fatal error in menu:", data);
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              hls.recoverMediaError();
+              break;
+            default:
+              hls.destroy();
+              break;
+          }
+        }
+      });
+    } else if (videoElement.canPlayType("application/vnd.apple.mpegurl")) {
+      videoElement.src = videoSrc;
+      videoElement.play().catch((err: Error) => {
+        console.error("Error playing menu video:", err);
+      });
+    }
+
+    return () => {
+      videoElement.removeEventListener("error", handleError);
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+      videoElement.pause();
+      videoElement.src = "";
+      videoTexture.dispose();
+    };
+  }, [muxPlaybackId, videoElement, videoTexture]);
+
   // Create the UI
   const createUI = useCallback(() => {
     if (!containerRef.current) return;
 
     // Create main container with explicit dimensions to avoid NaN
+    // Use narrower width for main menu (with video), full width for descriptions
+    const containerWidth = activeSection ? 0.9 : 0.5;
+    const containerX = activeSection ? 0 : -0.3;
+
     const container = new ThreeMeshUI.Block({
-      width: 0.8,
+      width: containerWidth,
       height: 0.9,
       padding: 0.05,
       justifyContent: "center",
@@ -133,9 +227,9 @@ export function ThreeMeshUIMenu({
       bestFit: "shrink",
     });
 
-    // Position higher for better centering in the monitor frame
-    const yPosition = activeSection ? 0.62 : 0.65; // Description lower than menu
-    container.position.set(0, yPosition, 0.195);
+    // Position: left side for menu, centered for descriptions
+    const yPosition = activeSection ? 0.62 : 0.62; // Description lower than menu
+    container.position.set(containerX, yPosition, 0.18);
 
     // Set explicit render order to avoid z-fighting
     container.renderOrder = 999;
@@ -145,7 +239,7 @@ export function ThreeMeshUIMenu({
 
       // Decorative arrows and title
       const mainTitle = new ThreeMeshUI.Block({
-        width: 0.85,
+        width: 0.45,
         height: 0.1,
         margin: 0.02,
         justifyContent: "center",
@@ -176,34 +270,23 @@ export function ThreeMeshUIMenu({
       mainTitle.add(arrowLeft, centerText, arrowRight);
       container.add(mainTitle);
 
-      // Menu items in 2x2 grid layout
-      const gridRow1 = new ThreeMeshUI.Block({
-        width: 0.85,
-        height: 0.12,
+      // Menu items in vertical column layout
+      const menuColumn = new ThreeMeshUI.Block({
+        width: 0.45,
+        height: 0.5,
         margin: 0.01,
         justifyContent: "center",
-        contentDirection: "row",
+        contentDirection: "column",
         backgroundColor: new THREE.Color(0x0a0a0a),
         backgroundOpacity: 0,
         bestFit: "shrink",
       });
 
-      const gridRow2 = new ThreeMeshUI.Block({
-        width: 0.85,
-        height: 0.12,
-        margin: 0.01,
-        justifyContent: "center",
-        contentDirection: "row",
-        backgroundColor: new THREE.Color(0x0a0a0a),
-        backgroundOpacity: 0,
-        bestFit: "shrink",
-      });
-
-      mainMenuItems.forEach((item, index) => {
+      mainMenuItems.forEach((item) => {
         const button = new ThreeMeshUI.Block({
           width: 0.4,
-          height: 0.11,
-          margin: 0.005,
+          height: 0.1,
+          margin: 0.01,
           padding: 0.01,
           justifyContent: "center",
           contentDirection: "row",
@@ -223,13 +306,7 @@ export function ThreeMeshUIMenu({
         });
 
         button.add(buttonText);
-
-        // Add to appropriate row (2x2 grid)
-        if (index < 2) {
-          gridRow1.add(button);
-        } else {
-          gridRow2.add(button);
-        }
+        menuColumn.add(button);
 
         // Store button data for interaction
         (button as ThreeMeshUIBlock).userData = {
@@ -239,11 +316,11 @@ export function ThreeMeshUIMenu({
         };
       });
 
-      container.add(gridRow1, gridRow2);
+      container.add(menuColumn);
 
-      // Decorative separator line
+      // Decorative separator line //
       const separator = new ThreeMeshUI.Block({
-        width: 0.85,
+        width: 0.45,
         height: 0.005,
         margin: 0.01,
         backgroundColor: new THREE.Color(0xffffff),
@@ -254,7 +331,7 @@ export function ThreeMeshUIMenu({
 
       // Status bar at bottom
       const statusBar = new ThreeMeshUI.Block({
-        width: 0.85,
+        width: 0.45,
         height: 0.06,
         margin: 0.01,
         padding: 0.01,
@@ -527,6 +604,11 @@ export function ThreeMeshUIMenu({
   useFrame(() => {
     if (!uiContainer || !isInitialized) return;
 
+    // Update video texture
+    if (videoElement.readyState >= videoElement.HAVE_CURRENT_DATA) {
+      videoTexture.needsUpdate = true;
+    }
+
     // Only update ThreeMeshUI when needed (when UI changes)
     if (needsUpdate.current) {
       ThreeMeshUI.update();
@@ -597,5 +679,43 @@ export function ThreeMeshUIMenu({
     }
   });
 
-  return <group ref={containerRef} />;
+  // Custom shader material to remove black background
+  const videoMaterial = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        map: { value: videoTexture },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D map;
+        varying vec2 vUv;
+        void main() {
+          vec4 texColor = texture2D(map, vUv);
+          // Calculate luminance
+          float luminance = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));
+          // Use luminance as alpha - makes blacks transparent
+          gl_FragColor = vec4(texColor.rgb, luminance);
+        }
+      `,
+      transparent: true,
+      depthWrite: false,
+    });
+  }, [videoTexture]);
+
+  return (
+    <group ref={containerRef}>
+      {/* Video on the right side - only show on main menu */}
+      {!activeSection && (
+        <mesh position={[0.27, 0.61, 0.195]} material={videoMaterial}>
+          <planeGeometry args={[0.6, 0.85]} />
+        </mesh>
+      )}
+    </group>
+  );
 }
