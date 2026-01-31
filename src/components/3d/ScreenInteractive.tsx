@@ -15,6 +15,7 @@ import type { ScreenInteractiveProps, GLTFResult } from "./types";
 export function ScreenInteractive({
   name,
   description,
+  url,
   labelYOffset,
   descriptionOffset,
   zoomDistanceMultiplier,
@@ -218,6 +219,7 @@ export function ScreenInteractive({
       {...props}
       name={name}
       description={description}
+      url={url}
       labelYOffset={labelYOffset}
       descriptionOffset={descriptionOffset}
       zoomDistanceMultiplier={zoomDistanceMultiplier}

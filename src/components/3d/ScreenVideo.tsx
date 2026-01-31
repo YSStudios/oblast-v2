@@ -11,6 +11,7 @@ import type { ScreenVideoProps, GLTFResult } from "./types";
 
 export function ScreenVideo({
   description,
+  url,
   muxPlaybackId,
   name,
   labelYOffset: customLabelYOffset,
@@ -136,6 +137,7 @@ export function ScreenVideo({
       panelRef,
       name,
       description,
+      url,
       descriptionOffset
     );
     return () => {
@@ -148,6 +150,7 @@ export function ScreenVideo({
     unregisterScreen,
     name,
     description,
+    url,
     descriptionOffset,
   ]);
 

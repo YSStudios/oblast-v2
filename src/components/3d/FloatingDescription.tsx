@@ -1,19 +1,56 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Text } from "@react-three/drei";
-import { Group, Vector3, Box3, Quaternion, Matrix4 } from "three";
+import { Text, Line } from "@react-three/drei";
+import { Group, Vector3, Quaternion, Matrix4 } from "three";
 import { useScreenFocus } from "./ScreenFocusContext";
 
 export function FloatingDescription() {
   const groupRef = useRef<Group>(null);
   const [opacity, setOpacity] = useState(0);
   const [displayText, setDisplayText] = useState("");
+  const [displayLinkText, setDisplayLinkText] = useState("");
+  const [linkHovered, setLinkHovered] = useState(false);
   const animationProgress = useRef(0);
+  const linkAnimationProgress = useRef(0);
   const lastUpdateTime = useRef(0);
   const { currentScreenId, screens, focusTarget, zoomInComplete } =
     useScreenFocus();
+
+  // Create pill outline points
+  const pillOutlinePoints = useMemo(() => {
+    const width = 0.15;
+    const height = 0.032;
+    const radius = height / 2; // Perfect pill shape
+    const segments = 16;
+    const points: [number, number, number][] = [];
+
+    // Right semicircle (top to bottom)
+    for (let i = 0; i <= segments / 2; i++) {
+      const angle = -Math.PI / 2 + (Math.PI * i) / (segments / 2);
+      points.push([
+        width / 2 - radius + Math.cos(angle) * radius,
+        Math.sin(angle) * radius,
+        0,
+      ]);
+    }
+
+    // Left semicircle (bottom to top)
+    for (let i = 0; i <= segments / 2; i++) {
+      const angle = Math.PI / 2 + (Math.PI * i) / (segments / 2);
+      points.push([
+        -width / 2 + radius + Math.cos(angle) * radius,
+        Math.sin(angle) * radius,
+        0,
+      ]);
+    }
+
+    // Close the loop
+    points.push(points[0]);
+
+    return points;
+  }, []);
 
   // Generate random character
   const randomChar = () => {
@@ -156,6 +193,52 @@ export function FloatingDescription() {
         setDisplayText("");
       }
     }
+
+    // Animate link text scramble effect
+    if (zoomInComplete && screenData?.url) {
+      // Extract website name from URL
+      let linkText = screenData.url
+        .replace(/^https?:\/\//, "") // Remove protocol
+        .replace(/^www\./, "") // Remove www.
+        .split("/")[0]; // Get domain only
+
+      // Remove only common TLD extensions (.com, .org, .net, etc.) but keep .earth and .agency
+      linkText = linkText.replace(
+        /\.(com|org|net|io|dev|co|app|xyz|tech)$/i,
+        ""
+      );
+
+      linkAnimationProgress.current += delta * 0.9; // Same speed as description
+
+      if (linkAnimationProgress.current >= 1) {
+        if (displayLinkText !== linkText) {
+          setDisplayLinkText(linkText);
+        }
+      } else {
+        // Only update every other frame for performance
+        if (Math.floor(state.clock.elapsedTime * 30) % 2 === 0) {
+          const progress = linkAnimationProgress.current;
+          const revealedChars = Math.floor(linkText.length * progress);
+
+          let newText = "";
+          for (let i = 0; i < linkText.length; i++) {
+            if (i < revealedChars) {
+              newText += linkText[i];
+            } else if (linkText[i] === " ") {
+              newText += " "; // Keep spaces
+            } else {
+              newText += randomChar();
+            }
+          }
+          setDisplayLinkText(newText);
+        }
+      }
+    } else if (!zoomInComplete) {
+      if (displayLinkText !== "") {
+        setDisplayLinkText("");
+      }
+      linkAnimationProgress.current = 0; // Reset animation when hiding
+    }
   });
 
   // Don't render if no screen is focused, zoom not complete, or opacity is too low
@@ -166,6 +249,13 @@ export function FloatingDescription() {
 
   // Use custom text Y offset if provided, otherwise use default
   const textYOffset = screenData?.descriptionOffset?.textY ?? 0.7;
+
+  // Handle link click
+  const handleLinkClick = () => {
+    if (screenData?.url) {
+      window.open(screenData.url, "_blank", "noopener,noreferrer");
+    }
+  };
 
   return (
     <group ref={groupRef}>
@@ -183,12 +273,66 @@ export function FloatingDescription() {
         renderOrder={10000}
         material-depthTest={false}
         material-depthWrite={false}
-        maxWidth={.7}
+        maxWidth={0.7}
         textAlign="left"
         lineHeight={1.2}
       >
         {displayText}
       </Text>
+
+      {/* Link button - only show if URL exists */}
+      {screenData?.url && (
+        <group position={[0.4, textYOffset - 0.03, 0]}>
+          {/* Pill outline using Line */}
+          <Line
+            points={pillOutlinePoints}
+            color={linkHovered ? "#ffffff" : "#35c19f"}
+            lineWidth={1.5}
+            transparent
+            opacity={opacity}
+            renderOrder={10001}
+            depthTest={false}
+          />
+
+          {/* Invisible clickable area */}
+          <mesh
+            position={[0, 0, 0]}
+            onPointerOver={(e) => {
+              e.stopPropagation();
+              setLinkHovered(true);
+              document.body.style.cursor = "pointer";
+            }}
+            onPointerOut={(e) => {
+              e.stopPropagation();
+              setLinkHovered(false);
+              document.body.style.cursor = "auto";
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleLinkClick();
+            }}
+          >
+            <planeGeometry args={[0.15, 0.032]} />
+            <meshBasicMaterial transparent opacity={0} />
+          </mesh>
+
+          {/* Link text */}
+          <Text
+            position={[0, 0, 0.001]}
+            fontSize={0.015}
+            color={linkHovered ? "#ffffff" : "#35c19f"}
+            anchorX="center"
+            anchorY="middle"
+            font="/fonts/Inter-Medium.woff"
+            fillOpacity={opacity}
+            renderOrder={10002}
+            material-depthTest={false}
+            material-depthWrite={false}
+          >
+            {displayLinkText}
+          </Text>
+        </group>
+      )}
     </group>
   );
 }
